@@ -3,6 +3,8 @@ clc
 %parpool('local',16) 
 conductorData=importfile('ConductorInfo.csv');
 [conductorCount,~]=size(conductorData);
+conductorData.Validated=zeros(conductorCount,1);
+conductorData.minfirstderivative=zeros(conductorCount,1);
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
@@ -10,7 +12,7 @@ conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./cond
 Tref=25;
 epsilons=0.9;
 H=0;
-phi=90;
+phi=12;
 sigmab=5.6697e-8;
 alphas=0.9;
 spacer=2;
@@ -35,12 +37,12 @@ for c1=1:5:conductorCount
         [~,a3]=size(a);
         limits=zeros(a1*a2*a2,3);
         counter=0;
-        rerun=1;
+        crash=1;
         delta=0.5;
         delta1=2;
         Cs(c)=-1*realmax;
-        while(rerun)
-        rerun=0;
+        while(crash)
+        crash=0;
         for psol=0:maxpsol/spacer:maxpsol
             for imagnitude=10:(maxcurrent-10)/spacer:maxcurrent
                 IIstar=abs(imagnitude)^2; 
@@ -59,12 +61,12 @@ for c1=1:5:conductorCount
                             g=Tcc-h/hprime;
                             if(g<root-delta)
                                 delta=root-g;
-                                rerun=1;
+                                crash=1;
                             elseif(g>GuessTc+delta1)
                                 delta1=g-GuessTc;
-                                rerun=1;
+                                crash=1;
                             end
-                            if(rerun) 
+                            if(crash) 
                                 break 
                             end
                             if(gprime>Cs(c))
@@ -72,15 +74,15 @@ for c1=1:5:conductorCount
                             end
                          end
                      %end
-                     if(rerun)
+                     if(crash)
                          break
                      end
                 end
-                 if(rerun)
+                 if(crash)
                      break
                  end
             end
-            if(rerun)
+            if(crash)
                 break
             end
         end
