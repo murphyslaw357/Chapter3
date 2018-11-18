@@ -17,9 +17,11 @@ Vw=2;
 sigmab=5.6697e-8;
 alphas=0.9;
 spacer=2;
-intervals=zeros(conductorCount,2);
-for c1=1:83:conductorCount
-    for c=c1:c1+82
+deltas=zeros(conductorCount,1);
+delta1s=zeros(conductorCount,1);
+Cs=zeros(conductorCount,1);
+for c1=1:5:conductorCount
+    parfor c=c1:c1+4
         cdata=conductorData(c,:);
         %A=cellstr(cdata.Type);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
@@ -40,6 +42,7 @@ for c1=1:83:conductorCount
         crash=1;
         delta=0.5;
         delta1=2;
+        Cs(c)=-1*realmax;
         while(crash)
         crash=0;
         for psol=0:maxpsol/spacer:maxpsol
@@ -51,9 +54,9 @@ for c1=1:83:conductorCount
                          Vw=10;
                          [root,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
                          counter=counter+1;
-                         limits(counter,1)=root-2;
-                         limits(counter,2)=GuessTc+2;
-                         limits(counter,3)=-1*realmax;
+                         %limits(counter,1)=root-2;
+                         %limits(counter,2)=GuessTc+2;
+                         %limits(counter,3)=-1*realmax;
                          for Tcc=root-delta:GuessTc+delta1
                             [Tc,I2R,I2Rprime,Prad,Pradprime,Pradprimeprime,Pcon,Pconprime,Pconprimeprime] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol,Tcc);
                             h=I2R+psol-Prad-Pcon;
@@ -61,18 +64,18 @@ for c1=1:83:conductorCount
                             hprimeprime=-1*Pradprimeprime-Pconprimeprime;
                             gprime=abs(1-((hprime*hprime-h*hprimeprime)/(hprime^2)));
                             g=Tcc-h/hprime;
-                            if(g<root-delta || g>GuessTc+delta1)
+                            if(g<root-delta)
                                 delta=root-g;
                                 crash=1;
-                            elseif(g>GuessTc+2)
+                            elseif(g>GuessTc+delta1)
                                 delta1=g;
                                 crash=1;
                             end
                             if(crash) 
                                 break 
                             end
-                            if(gprime>limits(counter,3))
-                                limits(counter,3)=gprime;
+                            if(gprime>Cs(c))
+                                Cs(c)=gprime;
                             end
                             if(gprime>1)
                                disp('doh') 
@@ -92,16 +95,13 @@ for c1=1:83:conductorCount
             end
         end
         end
-        intervals(c,1)=delta;
-        intervals(c,2)=delta1;
+        deltas(c,1)=delta;
+        delta1s(c,2)=delta1;
         disp(delta)
         disp(delta1)
     end
 
-    conductorData.Counters=counters;
-    conductorData.Validated=cond;
-    conductorData.minfirstderivative=minFirstDer;
-    conductorData.minsecondderivative=minSecondDer;
-    conductorData.Maxcurrent=maxCurrent;
+    conductorData.deltas=deltas;
+    conductorData.delta1s=delta1s;
     writetable(conductorData,'ConductorValidationResults.csv'); 
 end
