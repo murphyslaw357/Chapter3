@@ -23,7 +23,6 @@ Cs=zeros(conductorCount,1);
 for c1=1:5:conductorCount
     parfor c=c1:c1+4
         cdata=conductorData(c,:);
-        %A=cellstr(cdata.Type);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
         disp(strcat(num2str(100*c/conductorCount),cellstr(cdata.CodeWord)))
@@ -54,9 +53,6 @@ for c1=1:5:conductorCount
                          Vw=10;
                          [root,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
                          counter=counter+1;
-                         %limits(counter,1)=root-2;
-                         %limits(counter,2)=GuessTc+2;
-                         %limits(counter,3)=-1*realmax;
                          for Tcc=root-delta:GuessTc+delta1
                             [Tc,I2R,I2Rprime,Prad,Pradprime,Pradprimeprime,Pcon,Pconprime,Pconprimeprime] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol,Tcc);
                             h=I2R+psol-Prad-Pcon;
@@ -68,7 +64,7 @@ for c1=1:5:conductorCount
                                 delta=root-g;
                                 crash=1;
                             elseif(g>GuessTc+delta1)
-                                delta1=g;
+                                delta1=g-GuessTc;
                                 crash=1;
                             end
                             if(crash) 
@@ -76,9 +72,6 @@ for c1=1:5:conductorCount
                             end
                             if(gprime>Cs(c))
                                 Cs(c)=gprime;
-                            end
-                            if(gprime>1)
-                               disp('doh') 
                             end
                          end
                      %end
@@ -95,13 +88,14 @@ for c1=1:5:conductorCount
             end
         end
         end
-        deltas(c,1)=delta;
-        delta1s(c,2)=delta1;
+        deltas(c)=delta;
+        delta1s(c)=delta1;
         disp(delta)
         disp(delta1)
     end
 
     conductorData.deltas=deltas;
     conductorData.delta1s=delta1s;
+    conductorData.Cs=Cs;
     writetable(conductorData,'ConductorValidationResults.csv'); 
 end
