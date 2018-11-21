@@ -22,7 +22,7 @@ minSecondDer=zeros(conductorCount,1);
 maxCurrent=zeros(conductorCount,1);
 counters=zeros(conductorCount,1);
 
-spacer=2;
+spacer=8;
 
 
 c=61;
@@ -90,16 +90,16 @@ murphy=squeeze(murphyTemp(1,a2num,:,:));
 cecchi=squeeze(cecchiTemp(1,a2num,:,:));
 black=squeeze(blackTemp(1,a2num,:,:));
 surf(a4,a3,(std738-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
+zlabel('Error (°C)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
 figure
 surf(a4,a3,(cecchi-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
+zlabel('Error (°C)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
 figure
 surf(a4,a3,(black-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
+zlabel('Error (°C)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
