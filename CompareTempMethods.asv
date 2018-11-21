@@ -85,21 +85,4 @@ c=61;
     writetable(conductorData,'ConductorValidationResults.csv'); 
 %end
 
-std738=squeeze(std738Temp(1,a2num,:,:));
-murphy=squeeze(murphyTemp(1,a2num,:,:));
-cecchi=squeeze(cecchiTemp(1,a2num,:,:));
-black=squeeze(blackTemp(1,a2num,:,:));
-surf(a4,a3,(std738-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
-figure
-surf(a4,a3,(cecchi-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
-figure
-surf(a4,a3,(black-murphy))
-zlabel('Error - °C')
-ylabel('Ambient Temperature')
-xlabel('Wind Speed')
+surf(squeeze(std738Temp(1,a2nu,:,:))-squeeze(murphyTemp(1,a2num,:,:)))
