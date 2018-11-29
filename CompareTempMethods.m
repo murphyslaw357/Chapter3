@@ -1,6 +1,7 @@
 clear
 clc
- 
+close all
+
 conductorData=importfile('ConductorInfo.csv');
 [conductorCount,~]=size(conductorData);
 conductorData.Validated=zeros(conductorCount,1);
@@ -49,14 +50,21 @@ c=61;
         cecchiTemp=zeros(a1num,a2num,a3num,a4num);
         blackTemp=zeros(a1num,a2num,a3num,a4num);
         std738Temp=zeros(a1num,a2num,a3num,a4num);
+        kctracker=zeros(a1num,a2num,a3num,a4num);
+        krtracker=zeros(a1num,a2num,a3num,a4num);
+        kcsantos=zeros(a1num,a2num,a3num,a4num);
+        krblack=zeros(a1num,a2num,a3num,a4num);
+        kcblack=zeros(a1num,a2num,a3num,a4num);
         
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;
         solarcounter=0;
-        for psol=0:maxpsol/spacer:maxpsol
-            solarcounter=solarcounter+1
+        psol=maxpsol;
+        %for psol=0:maxpsol/spacer:maxpsol
+            solarcounter=solarcounter+1;
             currentcounter=0;
-            for imagnitude=10:(maxcurrent-10)/spacer:maxcurrent
+            %for imagnitude=10:(maxcurrent-10)/spacer:maxcurrent
+            imagnitude=maxcurrent;
                 currentcounter=currentcounter+1;
                 ambtempcounter=0;
                 IIstar=abs(imagnitude)^2; 
@@ -65,17 +73,21 @@ c=61;
                     windcounter=0;
                     for Vw=0:0.1:10
                         windcounter=windcounter+1;
-                         [Tc,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
+                         [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
                          murphyTemp(solarcounter,currentcounter,ambtempcounter,windcounter)=Tc;
                          cecchiTemp(solarcounter,currentcounter,ambtempcounter,windcounter)=ambtemp;
                          [Tc] = GetTempBlack(imagnitude,ambtemp,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
                          blackTemp(solarcounter,currentcounter,ambtempcounter,windcounter)=Tc;
                          [Tc] = GetTempStd738(imagnitude,ambtemp,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol,H);
                          std738Temp(solarcounter,currentcounter,ambtempcounter,windcounter)= Tc;
+                         
+                         kctracker(solarcounter,currentcounter,ambtempcounter,windcounter)=Pcon/(Tc-ambtemp);
+                         kcsantos(solarcounter,currentcounter,ambtempcounter,windcounter)=2.8636*pi*diam*sqrt(Vw/diam);
+                         krtracker(solarcounter,currentcounter,ambtempcounter,windcounter)=Prad/(Tc-ambtemp);
                     end
                 end
-            end
-        end
+            %end
+        %end
     %end
     conductorData.Counters=counters;
     conductorData.Validated=cond;
@@ -85,21 +97,53 @@ c=61;
     writetable(conductorData,'ConductorValidationResults.csv'); 
 %end
 
-std738=squeeze(std738Temp(1,a2num,:,:));
-murphy=squeeze(murphyTemp(1,a2num,:,:));
-cecchi=squeeze(cecchiTemp(1,a2num,:,:));
-black=squeeze(blackTemp(1,a2num,:,:));
+krtrackermax=squeeze(krtracker(1,1,:,:));
+kcsantosmax=squeeze(kcsantos(1,1,:,:));
+kctrackermax=squeeze(kctracker(1,1,:,:));
+
+std738=squeeze(std738Temp(1,1,:,:));
+murphy=squeeze(murphyTemp(1,1,:,:));
+cecchi=squeeze(cecchiTemp(1,1,:,:));
+black=squeeze(blackTemp(1,1,:,:));
+
+avgkr=mean(krtrackermax,'all');
+surf(a4,a3,100.*(avgkr-krtrackermax)./krtrackermax)
+zlabel('Kr Error (%)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
+colormap((gray));
+shading interp
+figure
+surf(a4,a3,100.*(kcsantosmax-kctrackermax)./kctrackermax)
+zlabel('Kc Error (%)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
+colormap((gray));
+shading interp
+figure
+surf(a4,a3,(murphy))
+zlabel('Conductor Temperature (°C)')
+ylabel('Ambient Temperature (°C)')
+xlabel('Wind Speed (m/s)')
+colormap((gray));
+shading interp
+figure
 surf(a4,a3,(std738-murphy))
 zlabel('Error (°C)')
 ylabel('Ambient Temperature (°C)')
 xlabel('Wind Speed (m/s)')
+colormap((gray));
+shading interp
 figure
 surf(a4,a3,(cecchi-murphy))
 zlabel('Error (°C)')
 ylabel('Ambient Temperature (°C)')
 xlabel('Wind Speed (m/s)')
+
+shading interp
 figure
 surf(a4,a3,(black-murphy))
 zlabel('Error (°C)')
 ylabel('Ambient Temperature (°C)')
 xlabel('Wind Speed (m/s)')
+shading interp
