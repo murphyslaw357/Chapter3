@@ -1,6 +1,5 @@
-                                                                                          %I,Ta,H,D,phi,Vw,alpha,beta,                     epsilons,Psol
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFullDiagnostic(I,Ta,H,D,phi,Vw,R_T_high,R_T_low, T_high, T_low,epsilons,Psol)
-    phi=90*pi/180;
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFullDiagnostic(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol)
+    %phi=90*pi/180;
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -9,8 +8,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
     %Vw - Wind velocity - m/s
 	%epsilons - conductor emissivity
     %Psol - solar heating - w/m  
-    beta=(R_T_high-R_T_low)/(T_high-T_low);
-    alpha=R_T_high-beta*T_high;
+    %beta=(R_T_high-R_T_low)/(T_high-T_low);
+    %alpha=R_T_high-beta*T_high;
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;

@@ -1,6 +1,6 @@
 clear
 clc
-%parpool('local',16) 
+
 conductorData=importfile41('ConductorInfo.csv');
 [conductorCount,~]=size(conductorData);
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
@@ -48,10 +48,11 @@ for c1=1:5:conductorCount
                     GuessTc=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
                     %for Vw=0:0.1:10
                          Vw=10;
-                         [root,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol);
+                         phi=90*pi/180;
+                         [root,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol);
                          counter=counter+1;
                          for Tcc=root-delta:GuessTc+delta1
-                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pradprimeprime,Pcon,Pconprime,Pconprimeprime] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,cdata.ResistanceACHighdegcMeter,cdata.ResistanceACLowdegcMeter, cdata.HighTemp, cdata.LowTemp,epsilons,psol,Tcc);
+                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pradprimeprime,Pcon,Pconprime,Pconprimeprime] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
                             h=I2R+psol-Prad-Pcon;
                             hprime=I2Rprime-Pradprime-Pconprime;
                             hprimeprime=-1*Pradprimeprime-Pconprimeprime;
