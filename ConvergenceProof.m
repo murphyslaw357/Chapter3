@@ -1,7 +1,7 @@
 clear
 clc
 %parpool('local',16) 
-conductorData=importfile('ConductorInfo.csv');
+conductorData=importfile41('ConductorInfo.csv');
 [conductorCount,~]=size(conductorData);
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
@@ -18,7 +18,7 @@ deltas=zeros(conductorCount,1);
 delta1s=zeros(conductorCount,1);
 Cs=zeros(conductorCount,1);
 for c1=1:5:conductorCount
-    parfor c=c1:c1+4
+    for c=c1:c1+4
         cdata=conductorData(c,:);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
