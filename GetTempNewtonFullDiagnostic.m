@@ -14,22 +14,13 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
     sigmab=5.6697e-8;
     g=9.805;
     IIstar=abs(I)^2;
-%     vw2=0.5;
-%     if(Vw>2)
-%         vw2=Vw;
-%     end
-    %h=(0.0272/D)*10^(2.217+0.652*log10(vw2*D)+0.0355*(log10(vw2*D)^2));
-    %E=1.38e8+(1.39e6)*Ta;
     GuessTc=((Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4)-273;  
-    %GuessTc2=Ta+(IIstar*(alpha+beta*Ta)+Psol)/(pi*h*D+epsilons*pi*D*sigmab*E-IIstar*beta);
-    %%GuessTc=(Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons*E+pi*D*h)+Ta;
-    Tolerance=0.01; %tolerance criteria for Newton's method
+    Tolerance=0.001; %tolerance criteria for Newton's method
     epsilon=1e-9;
     update=realmax;
     TfilmkPrime=1/2;
     PrPrime=-1.25e-4;
     vfPrime=(4.75e-8)*((1-((6.5e-3)*H)/288.16)^-5.2561);
-    %vfPrimePrime=0;
     Relim1=0.437*(4e-3)^0.0895;
     Relim2=0.565*(9e-2)^0.136;
     Relim3=0.800*(1)^0.280;
@@ -41,16 +32,16 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
     end
     I2R=0;
     Prad=0;
-    Pcon=0; %|| round(I2R,2)<0 || round(Prad,2)<0 || round(Pcon,2)<0
+    Pcon=0;
     I2Rprime=beta*IIstar;
+    if(isnan(GuessTc))
     
+    end
     while(abs(update)>Tolerance)
         counter=counter+1;
         GuessTfilm=(GuessTc+Ta)/2;
         vf=((1.32e-5)+(9.5e-8)*GuessTfilm)*((1-((6.5e-3)*H)/288.16)^-5.2561);
-                
         Tfilmk=GuessTfilm+273;
-        
         Gr=(g*(D^3)*abs(GuessTc-Ta))/(Tfilmk*(vf^2));        
         GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
             ((Tfilmk^2)*(vf^3));
@@ -63,19 +54,19 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
         if(GrPr>=0 && GrPr<=1e-4) %1e-10
             A=0.675;
             m=0.058;
-        elseif(Gr*Pr>1e-4 && Gr*Pr<=1e-1)
+        elseif(GrPr>1e-4 && GrPr<=1e-1)
             A=0.889;
             m=0.088;
-        elseif(Gr*Pr>1e-1 && Gr*Pr<=1e2)
+        elseif(GrPr>1e-1 && GrPr<=1e2)
             A=1.02;
             m=0.148;
-        elseif(Gr*Pr>1e2 && Gr*Pr<=1e4)
+        elseif(GrPr>1e2 && GrPr<=1e4)
             A=0.85;
             m=0.188;
-        elseif(Gr*Pr>1e4 && Gr*Pr<=1e7)
+        elseif(GrPr>1e4 && GrPr<=1e7)
             A=0.48;
             m=0.25;
-        elseif(Gr*Pr>1e7 && Gr*Pr<=1e12)
+        elseif(GrPr>1e7 && GrPr<=1e12)
             A=0.125;
             m=0.333;
         end
@@ -113,17 +104,10 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
             msg='error';
             error(msg)
         end
-        Req=(Nudf/C)^(1/n);
-        
-        %k=((A/C)*Pr^m)^(1/n);
-        %Req=k*(Gr^(m/n));
-        %k1=((A/C)*Pr^m)^(1/n)
-        %Req1=((A/C)*GrPr^m)^(1/n);%*(Gr^(m/n))
-        
+        Req=(Nudf/C)^(1/n);       
         Re=sin(phi)*Vw*D/vf;
         
         RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
-        %RePrimePrime=sin(phi)*Vw*D*2*(vfPrime^2)/(vf^3);
         Reeff=sqrt((Re^2)+(Req^2));
 
         %%
@@ -162,18 +146,9 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
         end
         I2R=IIstar*Resistance;
         
-        %Tsky=(0.0552*(Ta+273)^1.5)-273;
-        %Tg=Ta+2;
         Prad=pi*D*sigmab*epsilons*(((GuessTc+273)^4)-((Ta+273)^4));
-        %Prad=pi*D*sigmab*epsilons*(((GuessTc+273)^4)-0.5*((Tsky+273)^4)-0.5*((Tg+273)^4));
         PradPrime=4*pi*D*sigmab*epsilons*(GuessTc+273)^3;
-        %PradPrimePrime=12*pi*D*sigmab*epsilons*(GuessTc+273)^2;
-        
-        %dtop=TfilmkPrime*vf+Tfilmk*vfPrime-abs(GuessTc-Ta)*(TfilmkPrime*vfPrime+2*TfilmkPrime*vfPrime+2*Tfilmk*vfPrimePrime)-(TfilmkPrime*vf+2*Tfilmk*vfPrime);
-        %GrPrimePrime=g*(D^3)*(((Tfilmk^2)*(vf^3))*dtop-...
-        %    ((Tfilmk*vf-abs(GuessTc-Ta)*(TfilmkPrime*vf+2*Tfilmk*vfPrime)))*(Tfilmk*(vf^3)+3*(vf^2)*vfPrime*(Tfilmk^2)))/...
-        %    ((Tfilmk^4)*(vf^6));
-        
+       
         
         Top=Re*RePrime+((A/C)^(2/n))*(m/n)*(GrPr^((2*m-n)/n))*(GrPrime*Pr+Gr*PrPrime);
         %TopPrime=Re*RePrimePrime+RePrime*RePrime+((A/C)^(2/n))*(m/n)*(((2*m-n)/n)*(GrPr^((2*m-2*n)/n))*(GrPrime*Pr+Gr*PrPrime)+...
@@ -200,10 +175,11 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFull
         end
         Mismatch=I2R+Psol-Prad-Pcon;
         update=Mismatch/Hprime;
+        if(isnan(update))
+           disp('error') 
+        end
         GuessTc=GuessTc-update;
-%         if(Psol==0 && I2R==0)
-%             GuessTc=Ta;
-%         end
+
         if(GuessTc<Ta)
             %disp('case')
         elseif(GuessTc>1500)
