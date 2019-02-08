@@ -4,6 +4,8 @@ clc
 conductorData=importfileAA('C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\ConductorInfo.csv');
 %conductorData=importfileAA('/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/ConductorInfo.csv');
 [conductorCount,~]=size(conductorData);
+convergenceData=importfile('C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\ConductorValidationResults.csv');
+
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
@@ -40,17 +42,9 @@ for c=1:conductorCount
                 GuessTc=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
                 for Vw=0:10/spacer:10
                     counter=counter+1;
-                    %if(root(counter,1)==realmax)
-                        [roott,~,~,~,~,~,~] =GetTempNewtonFullDiagnostic(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol);
-                        root(counter,1)=roott;
-                    %end
-                    rerun=1;
-                    reruncounter=0;
-                    while(rerun)
-                        rerun=0;
-                        reruncounter=reruncounter+1;
-                        if(reruncounter>50)
-                        end
+                    
+                        
+                      
                         %dist=ceil(10*((GuessTc+delta1(counter))-(root(counter,1)-delta(counter))));
                         %ftracker=zeros(dist,1);
                         %fprimetracker=zeros(dist,1);
@@ -59,29 +53,20 @@ for c=1:conductorCount
                         %temp=zeros(dist,1); 
                         %fcounter=0;
 
-                        for Tcc=root(counter,1)-delta(counter):0.1:GuessTc+delta1(counter)
-                            %fcounter=fcounter+1;
+                        for Tcc=root(counter,1)-conductorData.delta(counter):0.1:GuessTc+conductorData.delta1(counter)
                             [Tc,I2R,I2Rprime,Prad,Pradprime,~,Pcon,Pconprime,~] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
                             h=I2R+psol-Prad-Pcon;
                             hprime=I2Rprime-Pradprime-Pconprime;
-                            g=Tcc-h/hprime;
-                            %pcontracker(fcounter)=Pcon;
-                            %pconprimetracker(fcounter)=Pconprime;
-                            %ftracker(fcounter)=h;
-                            %fprimetracker(fcounter)=hprime;
-                            %temp(fcounter)=Tcc;
-                            if(g<root(counter,1)-delta(counter))
-                                delta(counter)=0.1+root(counter,1)-g;
-                                rerun=1;
-                            elseif(g>GuessTc+delta1(counter))
-                                delta1(counter)=0.1+g-GuessTc;
-                                rerun=1;
-                            end
-                            if(rerun) 
-                                break 
+                            updatecc=Tcc-h/hprime;
+                            for Tcc1=Tcc:0.1:GuessTc+conductorData.delta1(counter)
+                                [Tc1,I2R1,I2Rprime1,Prad1,Pradprime1,~,Pcon1,Pconprime1,~] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc1);
+                                h1=I2R1+psol-Prad1-Pcon1;
+                                hprime1=I2Rprime1-Pradprime1-Pconprime1;
+                                updatecc1=Tcc1-h1/hprime1;
+                                C=abs(updatecc-updatecc1)/abs(Tcc-Tcc1);
                             end
                         end
-                    end
+                    
                  end
 %                      if(rerun)
 %                          break
