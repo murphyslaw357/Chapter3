@@ -1,9 +1,9 @@
 clear
 clc
 
-%foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
 %foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
-foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+%foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
@@ -28,7 +28,7 @@ delta1info=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount+4);
 
 for c1=1:10:conductorCount
-    parfor c=c1:c1+9
+    for c=c1:c1+9
         root=realmax.*ones(weatherPermutationCount,1);
         delta=0.5.*ones(weatherPermutationCount,1);
         delta1=2.*ones(weatherPermutationCount,1);
@@ -42,7 +42,7 @@ for c1=1:10:conductorCount
         counter=0;
         for psol=0:maxpsol/spacer:maxpsol
             disp(psol)
-            for imagnitude=10:(maxcurrent-10)/spacer:maxcurrent
+            for imagnitude=0:(maxcurrent)/spacer:maxcurrent
                 IIstar=abs(imagnitude)^2; 
                 for ambtemp=-33:65
                     GuessTc=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
@@ -56,13 +56,13 @@ for c1=1:10:conductorCount
                         reruncounter=0;
                         while(rerun)
                             rerun=0;
-    %                         reruncounter=reruncounter+1;
-    %                         if(reruncounter>50)
-    %                         end
+                            reruncounter=reruncounter+1;
+                            if(reruncounter>50)
+                            end
 
                             for Tcc=root(counter,1)-delta(counter,1):0.1:GuessTc+delta1(counter,1)
                                 %fcounter=fcounter+1;
-                                [Tc,I2R,I2Rprime,Prad,Pradprime,~,Pcon,Pconprime,~] =GetTempNewtonFullDiagnosticFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
+                                [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
                                 h=I2R+psol-Prad-Pcon;
                                 hprime=I2Rprime-Pradprime-Pconprime;
                                 g=Tcc-h/hprime;
