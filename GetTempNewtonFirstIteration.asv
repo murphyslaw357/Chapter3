@@ -32,7 +32,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
     GuessTfilm=(GuessTc+Ta)/2;
     vf=((1.32e-5)+(9.5e-8)*GuessTfilm)*((1-((6.5e-3)*H)/288.16)^-5.2561);
     vfPrime=(4.75e-8)*((1-((6.5e-3)*H)/288.16)^-5.2561);
-    
     Relim1=(0.437/0.565)^(1/(0.136-0.0895));
     Relim2=(0.565/0.8)^(1/(0.280-0.136));
     Relim3=(0.8/0.795)^(1/(0.384-0.280));

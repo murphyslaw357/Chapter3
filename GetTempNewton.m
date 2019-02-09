@@ -19,12 +19,30 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     PrPrime=-1.25e-4;
     vfPrime=(4.75e-8)*((1-((6.5e-3)*H)/288.16)^-5.2561);
 
-    Relim1=0.437*(4e-3)^0.0895;
-    Relim2=0.565*(9e-2)^0.136;
-    Relim3=0.800*(1)^0.280;
-    Relim4=0.795*(35)^0.384;
-    Relim5=0.583*(5e3)^0.471;
-    Relim6=0.148*(5e4)^0.633;
+%     Relim1=0.437*(4e-3)^0.0895;
+%     Relim2=0.565*(9e-2)^0.136;
+%     Relim3=0.800*(1)^0.280;
+%     Relim4=0.795*(35)^0.384;
+%     Relim5=0.583*(5e3)^0.471;
+%     Relim6=0.148*(5e4)^0.633;
+    Relim1=(0.437/0.565)^(1/(0.136-0.0895));
+    Relim2=(0.565/0.8)^(1/(0.280-0.136));
+    Relim3=(0.8/0.795)^(1/(0.384-0.280));
+    Relim4=(0.795/0.583)^(1/(0.471-0.384));
+    Relim5=(0.583/0.148)^(1/(0.633-0.471));
+    Relim6=(0.148/0.0208)^(1/(0.814-0.633));
+    Nulim1=0.437*(Relim1^0.0895);
+    Nulim2=0.565*(Relim2^0.136);
+    Nulim3=0.800*(Relim3^0.280);
+    Nulim4=0.795*(Relim4^0.384);
+    Nulim5=0.583*(Relim5^0.471);
+    Nulim6=0.148*(Relim6^0.633);
+    GrPrlim1=(0.675/0.889)^(1/(0.088-0.058));
+    GrPrlim2=(0.889/1.02)^(1/(0.148-0.088));
+    GrPrlim3=(1.02/0.850)^(1/(0.188-0.148));
+    GrPrlim4=(0.850/0.480)^(1/(0.250-0.188));
+    GrPrlim5=(0.480/0.125)^(1/(0.333-0.250));
+    
 %     if(GuessTc<Ta)
 %         GuessTc=Ta+Tolerance;
 %     end
@@ -67,22 +85,22 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             %lookup A and m
             A=0;
             m=0;
-            if(GrPr>=0 && GrPr<=1e-4) %1e-10
+            if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
                 A=0.675;
                 m=0.058;
-            elseif(Gr*Pr>1e-4 && Gr*Pr<=1e-1)
+            elseif(Gr*Pr>GrPrlim1 && Gr*Pr<=GrPrlim2)
                 A=0.889;
                 m=0.088;
-            elseif(Gr*Pr>1e-1 && Gr*Pr<=1e2)
+            elseif(Gr*Pr>GrPrlim2 && Gr*Pr<=GrPrlim3)
                 A=1.02;
                 m=0.148;
-            elseif(Gr*Pr>1e2 && Gr*Pr<=1e4)
+            elseif(Gr*Pr>GrPrlim3 && Gr*Pr<=GrPrlim4)
                 A=0.85;
                 m=0.188;
-            elseif(Gr*Pr>1e4 && Gr*Pr<=1e7)
+            elseif(Gr*Pr>GrPrlim4 && Gr*Pr<=GrPrlim5)
                 A=0.48;
                 m=0.25;
-            elseif(Gr*Pr>1e7 && Gr*Pr<=1e12)
+            elseif(Gr*Pr>GrPrlim5 && Gr*Pr<=1e12)
                 A=0.125;
                 m=0.333;
             end
@@ -94,25 +112,25 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             %lookup C and n
             C=0;
             n=0;
-            if(Nudf<=Relim1)
+            if(Nudf<=Nulim1)
                 C=0.437;
                 n=0.0895;
-            elseif(Nudf>Relim1 && Nudf<=Relim2)
+            elseif(Nudf>Nulim1 && Nudf<=Nulim2)
                 C=0.565;
                 n=0.136;
-            elseif(Nudf>Relim2 && Nudf<=Relim3)
+            elseif(Nudf>Nulim2 && Nudf<=Nulim3)
                 C=0.8;
                 n=0.28;
-            elseif(Nudf>Relim3 && Nudf<=Relim4)
+            elseif(Nudf>Nulim3 && Nudf<=Nulim4)
                 C=0.795;
                 n=0.384;
-            elseif(Nudf>Relim4 && Nudf<=Relim5)
+            elseif(Nudf>Nulim4 && Nudf<=Nulim5)
                 C=0.583;
                 n=0.471;
-            elseif(Nudf>Relim5 && Nudf<=Relim6)
+            elseif(Nudf>Nulim5 && Nudf<=Nulim6)
                 C=0.148;
                 n=0.633;
-            elseif(Nudf>Relim6)
+            elseif(Nudf>Nulim6)
                 C=0.0208;
                 n=0.814;
             end
@@ -131,25 +149,25 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             %re-lookup C and n for effective Reynolds number
             C=0;
             n=0;
-            if(Reeff<=4e-3)
+            if(Reeff<=Relim1)
                 C=0.437;
                 n=0.0895;
-            elseif(Reeff>4e-3 && Reeff<=9e-2)
+            elseif(Reeff>Relim1 && Reeff<=Relim2)
                 C=0.565;
                 n=0.136;
-            elseif(Reeff>9e-2 && Reeff<=1)
+            elseif(Reeff>Relim2 && Reeff<=Relim3)
                 C=0.8;
                 n=0.28;
-            elseif(Reeff>1 && Reeff<=35)
+            elseif(Reeff>Relim3 && Reeff<=Relim4)
                 C=0.795;
                 n=0.384;
-            elseif(Reeff>35 && Reeff<=5e3)
+            elseif(Reeff>Relim4 && Reeff<=Relim5)
                 C=0.583;
                 n=0.471;
-            elseif(Reeff>5e3 && Reeff<=5e4)
+            elseif(Reeff>Relim5 && Reeff<=Relim6)
                 C=0.148;
                 n=0.633;
-            elseif(Reeff>5e4)% && Re<2e5)
+            elseif(Reeff>Relim6)% && Re<2e5)
                 C=0.0208;
                 n=0.814;
             end
@@ -173,28 +191,28 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
 
             %%
-            %lookup C and n for effective Reynolds number
+            %lookup C and n for Reynolds number
             C=0;
             n=0;
-            if(Re<=4e-3)
+            if(Re<=Relim1)
                 C=0.437;
                 n=0.0895;
-            elseif(Re>4e-3 && Re<=9e-2)
+            elseif(Re>Relim1&& Re<=Relim2)
                 C=0.565;
                 n=0.136;
-            elseif(Re>9e-2 && Re<=1)
+            elseif(Re>Relim2 && Re<=Relim3)
                 C=0.8;
                 n=0.28;
-            elseif(Re>1 && Re<=35)
+            elseif(Re>Relim3 && Re<=Relim4)
                 C=0.795;
                 n=0.384;
-            elseif(Re>35 && Re<=5e3)
+            elseif(Re>Relim4 && Re<=Relim5)
                 C=0.583;
                 n=0.471;
-            elseif(Re>5e3 && Re<=5e4)
+            elseif(Re>Relim5 && Re<=Relim6)
                 C=0.148;
                 n=0.633;
-            elseif(Re>5e4)% && Re<2e5)
+            elseif(Re>Relim6)% && Re<2e5)
                 C=0.0208;
                 n=0.814;
             end
@@ -232,7 +250,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
 %         elseif(GuessTc>1500)
 %             GuessTc=1500;
 %         end
-        
+        if(counter>=4000)
+        end
         if(counter>=5000)
             GuessTc=nan;
             break;
