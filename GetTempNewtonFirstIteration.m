@@ -10,7 +10,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
     sigmab=5.6697e-8;
     g=9.805;
     IIstar=abs(I)^2;
-    GuessTc=((Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4)-273;  
+%     GuessTc=((Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4)-273;  
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%RADIATIVE COOLING/HEATING%%%%%%%%%%%
     %Tsky=(0.0552*(Ta+273)^1.5)-273;
@@ -19,7 +19,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
     %Prad=pi*D*sigmab*epsilons*(((GuessTc+273)^4)-0.5*((Tsky+273)^4)-0.5*((Tg+273)^4));
     PradPrime=4*pi*D*sigmab*epsilons*(GuessTc+273)^3;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%JOULE HEATING%%%%%%%%%%%%%%%%%%%%%%%
-    IIstar=abs(I)^2;
     I2Rprime=beta*IIstar;
     Resistance=beta*GuessTc+alpha;
     if(Resistance<0)

@@ -30,8 +30,8 @@ rootinfo=zeros(weatherPermutationCount,conductorCount+4);
 for c1=1:10:conductorCount
     for c=c1:c1+9
         root=realmax.*ones(weatherPermutationCount,1);
-        delta=2.*ones(weatherPermutationCount,1);
-        delta1=2.*ones(weatherPermutationCount,1);
+        delta=zeros(weatherPermutationCount,1);
+        delta1=zeros(weatherPermutationCount,1);
         cdata=conductorData(c,:);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
@@ -67,18 +67,17 @@ for c1=1:10:conductorCount
                                 h=I2R+psol-Prad-Pcon;
                                 hprime=I2Rprime-Pradprime-Pconprime;
                                 g=Tcc-h/hprime;
-                                if(g<ambtemp)
-                                end
+                                if
                                 %pcontracker(fcounter)=Pcon;
                                 %pconprimetracker(fcounter)=Pconprime;
                                 %ftracker(fcounter)=h;
                                 %fprimetracker(fcounter)=hprime;
                                 %temp(fcounter)=Tcc;
                                 if(g<root(counter,1)-delta(counter,1))
-                                    delta(counter,1)=0.1+root(counter,1)-g;
+                                    delta(counter,1)=root(counter,1)-g;
                                     rerun=1;
                                 elseif(g>GuessTc+delta1(counter,1))
-                                    delta1(counter,1)=0.1+g-GuessTc;
+                                    delta1(counter,1)=g-GuessTc;
                                     rerun=1;
                                 end
                                 if(rerun) 
