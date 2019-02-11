@@ -56,8 +56,8 @@ for c1=1:12:conductorCount
             for imagnitude=0:maxcurrent/spacer:maxcurrent
                 IIstar=abs(imagnitude)^2; 
                 for ambtemp=-33:65
-                    GuessTc2=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
-                    GuessTc=(psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons*((1.38e8)+ambtemp*(1.39e6))+pi*(2.42e-2)*0.645)+ambtemp;
+                    GuessTc=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
+                    GuessTc2=(psol+IIstar*(alpha+25*beta))/(pi*diam*epsilons*sigmab*((1.38e8)+ambtemp*(1.39e6))+pi*(2.42e-2)*nu)
                     for Vw=0:10/spacer:10
                         counter=counter+1;
                         psols(counter)=psol;
@@ -96,7 +96,7 @@ for c1=1:12:conductorCount
                                 [Tc1,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc1);
                                 C=abs(Tc-Tc1)/abs(Tcc-Tcc1);
                                 if(C>1)
-                                    exceptions=[exceptions;c,imagnitude,ambtemp,Vw,psol,roott,GuessTc,GuessTc2,delta(counter,1),delta1(counter,1),Tcc,Tcc1];
+                                    exceptions=[exceptions;c,imagnitude,ambtemp,Vw,psol,roott,GuessTc,delta(counter,1),delta1(counter,1),Tcc,Tcc1];
                                 end
                             end
                         end

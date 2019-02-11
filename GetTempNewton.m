@@ -61,7 +61,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         %Prad=pi*D*sigmab*epsilons*(((GuessTc+273)^4)-0.5*((Tsky+273)^4)-0.5*((Tg+273)^4));
         PradPrime=4*pi*D*sigmab*epsilons*(GuessTc+273)^3;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%JOULE HEATING%%%%%%%%%%%%%%%%%%%%%%%
-
         Resistance=beta*GuessTc+alpha;
         if(Resistance<0)
             Resistance=0;
@@ -76,8 +75,45 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         Gr=(g*(D^3)*abs(GuessTc-Ta))/(Tfilmk*(vf^2));    
         Lambdaf=(2.42e-2)+(7.2e-5)*GuessTfilm;
         LambdafPrime=3.6e-5;
-        if((GuessTc~=Ta && Vw ~=0) || (GuessTc~=Ta && Vw==0))
-        %mixed convection or pure natural convection, which is handled in mixed
+        GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
+                ((Tfilmk^2)*(vf^3));
+        Pr=0.715-(2.5e-4)*GuessTfilm;
+        GrPr=Gr*Pr;
+        if(GuessTc~=Ta && Vw==0)
+            %pure natural convection
+            %lookup A and m
+            A=0;
+            m=0;
+            if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
+                A=0.675;
+                m=0.058;
+            elseif(GrPr>GrPrlim1 && GrPr<=GrPrlim2)
+                A=0.889;
+                m=0.088;
+            elseif(GrPr>GrPrlim2 && GrPr<=GrPrlim3)
+                A=1.02;
+                m=0.148;
+            elseif(GrPr>GrPrlim3 && GrPr<=GrPrlim4)
+                A=0.85;
+                m=0.188;
+            elseif(GrPr>GrPrlim4 && GrPr<=GrPrlim5)
+                A=0.48;
+                m=0.25;
+            elseif(GrPr>GrPrlim5 && GrPr<=1e12)
+                A=0.125;
+                m=0.333;
+            end
+            if(A==0)
+                msg='error';
+                error(msg)
+            end
+            Nudf=A*(GrPr^m);
+            NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*GrPrime);    
+
+            Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
+            PconPrime=pi*(Nudf*Lambdaf+LambdafPrime*Nudf*(GuessTc-Ta)+NudfPrime*Lambdaf*(GuessTc-Ta));
+        elseif(GuessTc~=Ta && Vw ~=0)
+        %mixed convection
             GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
                 ((Tfilmk^2)*(vf^3));
             Pr=0.715-(2.5e-4)*GuessTfilm;
@@ -88,19 +124,19 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
                 A=0.675;
                 m=0.058;
-            elseif(Gr*Pr>GrPrlim1 && Gr*Pr<=GrPrlim2)
+            elseif(GrPr>GrPrlim1 && GrPr<=GrPrlim2)
                 A=0.889;
                 m=0.088;
-            elseif(Gr*Pr>GrPrlim2 && Gr*Pr<=GrPrlim3)
+            elseif(GrPr>GrPrlim2 && GrPr<=GrPrlim3)
                 A=1.02;
                 m=0.148;
-            elseif(Gr*Pr>GrPrlim3 && Gr*Pr<=GrPrlim4)
+            elseif(GrPr>GrPrlim3 && GrPr<=GrPrlim4)
                 A=0.85;
                 m=0.188;
-            elseif(Gr*Pr>GrPrlim4 && Gr*Pr<=GrPrlim5)
+            elseif(GrPr>GrPrlim4 && GrPr<=GrPrlim5)
                 A=0.48;
                 m=0.25;
-            elseif(Gr*Pr>GrPrlim5 && Gr*Pr<=1e12)
+            elseif(GrPr>GrPrlim5 && GrPr<=1e12)
                 A=0.125;
                 m=0.333;
             end
@@ -167,7 +203,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             elseif(Reeff>Relim5 && Reeff<=Relim6)
                 C=0.148;
                 n=0.633;
-            elseif(Reeff>Relim6)% && Re<2e5)
+            elseif(Reeff>Relim6)
                 C=0.0208;
                 n=0.814;
             end
@@ -187,9 +223,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         elseif(GuessTc==Ta && Vw~=0)
         %pure forced    
             Re=sin(phi)*Vw*D/vf;
-
             RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
-
             %%
             %lookup C and n for Reynolds number
             C=0;
@@ -212,7 +246,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             elseif(Re>Relim5 && Re<=Relim6)
                 C=0.148;
                 n=0.633;
-            elseif(Re>Relim6)% && Re<2e5)
+            elseif(Re>Relim6)
                 C=0.0208;
                 n=0.814;
             end
@@ -224,9 +258,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             Nu=C*Re^n;        
             Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
             NuPrime=C*n*(Re^(n-1))*RePrime;   
-
             PconPrime=pi*(Nu*Lambdaf+LambdafPrime*Nu*(GuessTc-Ta)+NuPrime*Lambdaf*(GuessTc-Ta));
-
         else
         %no convection at all    
             Pcon=0;
@@ -235,23 +267,17 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%MISMATCH AND UPDATE%%%%%%%%%%%%%%
         Hprime=I2Rprime-PradPrime-PconPrime;
-        if(isnan(PconPrime))
-            end
-        if(Hprime>0)
-            disp('doh')
+        if(Hprime>0 || isnan(PconPrime) || PconPrime<0 || PradPrime<0)
+            msg='error condition';
+            error(msg);
         end
 
         Mismatch=I2R+Psol-Prad-Pcon;
         update=Mismatch/Hprime;
         GuessTc=GuessTc-update;   
 
-%         if(GuessTc<Ta)
-%             %disp('case')
-%         elseif(GuessTc>1500)
-%             GuessTc=1500;
-%         end
-        if(counter>=4000)
-        end
+        %if(counter>=4000)
+        %end
         if(counter>=5000)
             GuessTc=nan;
             break;
@@ -259,7 +285,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     end
     if(isnan(GuessTc))
         msg='converge failed!';
-        disp(msg);
+        error(msg);
     elseif(round(I2R,1)<0 || Psol <0 || round(GuessTc-Ta,1)<0)
        msg='error condition!';
        error(msg)

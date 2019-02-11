@@ -57,12 +57,12 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
     Gr=(g*(D^3)*abs(GuessTc-Ta))/(Tfilmk*(vf^2));    
     Lambdaf=(2.42e-2)+(7.2e-5)*GuessTfilm;
     LambdafPrime=3.6e-5;
-    GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
-            ((Tfilmk^2)*(vf^3));
-    Pr=0.715-(2.5e-4)*GuessTfilm;
-    GrPr=Gr*Pr;
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection
+        GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
+            ((Tfilmk^2)*(vf^3));
+        Pr=0.715-(2.5e-4)*GuessTfilm;
+        GrPr=Gr*Pr;
         %lookup A and m
         A=0;
         m=0;
@@ -90,17 +90,21 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
             error(msg)
         end
         Nudf=A*(GrPr^m);
-        NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*GrPrime);    
+        NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*G);    
 
         Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
-        PconPrime=pi*(Nudf*Lambdaf+LambdafPrime*Nudf*(GuessTc-Ta)+NudfPrime*Lambdaf*(GuessTc-Ta));
+        PconPrime=pi*(Nueff*Lambdaf+LambdafPrime*Nueff*(GuessTc-Ta)+NueffPrime*Lambdaf*(GuessTc-Ta));
     
     elseif(GuessTc~=Ta && Vw ~=0)
         %mixed convection
+        GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...
+            ((Tfilmk^2)*(vf^3));
+        Pr=0.715-(2.5e-4)*GuessTfilm;
+        GrPr=Gr*Pr;
         %lookup A and m
         A=0;
         m=0;
-        if(GrPr>=0 && GrPr<=GrPrlim1)
+        if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
             A=0.675;
             m=0.058;
         elseif(GrPr>GrPrlim1 && GrPr<=GrPrlim2)
@@ -199,7 +203,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
         Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
         PconPrime=pi*(Nueff*Lambdaf+LambdafPrime*Nueff*(GuessTc-Ta)+NueffPrime*Lambdaf*(GuessTc-Ta));
     elseif(GuessTc==Ta && Vw~=0)
-        %pure forced    
+    %pure forced    
         Re=sin(phi)*Vw*D/vf;
         RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
         %%
