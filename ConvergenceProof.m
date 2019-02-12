@@ -34,8 +34,10 @@ ambtempinfo=zeros(weatherPermutationCount,conductorCount);
 currentinfo=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=(-1*realmax).*ones(weatherPermutationCount,conductorCount);
+stepInfo=zeros(weatherPermutationCount,conductorCount);
+
 for c1=1:12:conductorCount
-    for c=c1:c1+11
+    parfor c=c1:c1+11
         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
@@ -43,6 +45,8 @@ for c1=1:12:conductorCount
         winds=zeros(weatherPermutationCount,1);
         ambtemps=zeros(weatherPermutationCount,1);
         currents=zeros(weatherPermutationCount,1);
+        cs=(-1*realmax).*ones(weatherPermutationCount,1);
+        steps=zeros(weatherPermutationCount,1);
         
         cdata=conductorData(c,:);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
@@ -71,14 +75,15 @@ for c1=1:12:conductorCount
                         reruncounter=0;
                         tempSearch=(roott-25:searchIncrement:roott+25)';
                         [searchCount,~]=size(tempSearch);
-                        tempSearch=[tempSearch,zeros(searchCount,4)];
+                        tempSearch=[tempSearch,zeros(searchCount,6)];
                         
                         for i=1:searchCount
-                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,tempSearch(i,1));
+                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,tempSearch(i,1));
                             tempSearch(i,2)=Tc;
-%                             tempSearch(i,3)=Pconprime;
-%                             tempSearch(i,4)=A;
-%                             tempSearch(i,5)=m;
+                            tempSearch(i,3)=A;
+                            tempSearch(i,4)=m;
+                            tempSearch(i,5)=C;
+                            tempSearch(i,6)=n;
                         end
                         
                         while(rerun)
@@ -113,12 +118,19 @@ for c1=1:12:conductorCount
 %                             end
                         end
                         [searchResCount,~]=size(searchRes);
+                        
+                        if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
+                            steps(counter)=-1;
+                        else
+                            steps(counter)=1;
+                        end
+                        
                         for i=1:searchResCount-1
                             for j=i+1:searchResCount
                                 %disp(strcat(num2str(i),',',num2str(j)));
                                 C=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
-                                if(C>cinfo(counter,c))
-                                    cinfo(counter,c)=C;
+                                if(C>cs(counter))
+                                    cs(counter)=C;
                                     if(C>1)
                                     end
                                 end
@@ -149,6 +161,8 @@ for c1=1:12:conductorCount
         windinfo(:,c)=winds;
         ambtempinfo(:,c)=ambtemps;
         currentinfo(:,c)=currents;
+        cinfo(:,c)=cs;
+        stepinfo(:,c)=steps;
     end
     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);

@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m,C,n] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -7,7 +7,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewton
     %Vw - Wind velocity - m/s
 	%epsilons - conductor emissivity
     %Psol - solar heating - w/m  
-    exceptions=[];
     sigmab=5.6697e-8;
     g=9.805;
     IIstar=abs(I)^2;
@@ -61,13 +60,13 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewton
             ((Tfilmk^2)*(vf^3));
     Pr=0.715-(2.5e-4)*GuessTfilm;
     GrPr=Gr*Pr;
-            A=0;
-        m=0;
+    A=0;
+    m=0;
+    C=0;
+    n=0;
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection
         %lookup A and m
-        A=0;
-        m=0;
         if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
             A=0.675;
             m=0.058;
@@ -100,8 +99,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewton
     elseif(GuessTc~=Ta && Vw ~=0)
         %mixed convection
         %lookup A and m
-        A=0;
-        m=0;
         if(GrPr>=0 && GrPr<=GrPrlim1)
             A=0.675;
             m=0.058;
@@ -127,8 +124,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewton
         end
         Nudf=A*(GrPr^m);
         %lookup C and n
-        C=0;
-        n=0;
+
         if(Nudf<=Nulim1)
             C=0.437;
             n=0.0895;
@@ -206,8 +202,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewton
         RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
         %%
         %lookup C and n for effective Reynolds number
-        C=0;
-        n=0;
         if(Re<=Relim1)
             C=0.437;
             n=0.0895;
