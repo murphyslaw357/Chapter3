@@ -1,8 +1,8 @@
 clear
 clc
 
-%foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
-foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+%foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
 %foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
 exceptions=[];
@@ -23,6 +23,7 @@ alphas=0.9;
 a=-33:65;
 [~,a3]=size(a);
 spacer=10;
+searchIncrement=0.01;
 
 weatherPermutationCount=a3*(spacer+1)^3;
 deltainfo=zeros(weatherPermutationCount,conductorCount);
@@ -32,11 +33,11 @@ windinfo=zeros(weatherPermutationCount,conductorCount);
 ambtempinfo=zeros(weatherPermutationCount,conductorCount);
 currentinfo=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
-
+cinfo=(-1*realmax).*ones(weatherPermutationCount,conductorCount);
 for c1=1:12:conductorCount
     for c=c1:c1+11
         root=realmax.*ones(weatherPermutationCount,1);
-        delta=1.*ones(weatherPermutationCount,1);
+        delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
         psols=zeros(weatherPermutationCount,1);
         winds=zeros(weatherPermutationCount,1);
@@ -68,6 +69,18 @@ for c1=1:12:conductorCount
                         root(counter,1)=roott;
                         rerun=1;
                         reruncounter=0;
+                        tempSearch=(roott-25:searchIncrement:roott+25)';
+                        [searchCount,~]=size(tempSearch);
+                        tempSearch=[tempSearch,zeros(searchCount,4)];
+                        
+                        for i=1:searchCount
+                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,tempSearch(i,1));
+                            tempSearch(i,2)=Tc;
+%                             tempSearch(i,3)=Pconprime;
+%                             tempSearch(i,4)=A;
+%                             tempSearch(i,5)=m;
+                        end
+                        
                         while(rerun)
                             rerun=0;
                             reruncounter=reruncounter+1;
@@ -75,31 +88,54 @@ for c1=1:12:conductorCount
                                 msg='error condition!';
                                 error(msg)
                             end
-
-                            for Tcc=root(counter,1)-delta(counter,1):0.1:GuessTc+delta1(counter,1)
-                                [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
-                                if(Tc<root(counter,1)-delta(counter,1))
-                                    delta(counter,1)=root(counter,1)-Tc;
-                                    rerun=1;
-                                elseif(Tc>GuessTc+delta1(counter,1))
-                                    delta1(counter,1)=Tc-GuessTc;
-                                    rerun=1;
-                                end
-                                if(rerun) 
-                                    break 
+                            
+                            searchRes=tempSearch(tempSearch(:,1)>roott-delta(counter,1)& tempSearch(:,1)<GuessTc+delta1(counter,1),:);
+                            if(max(searchRes(:,2))>GuessTc+delta1(counter,1))
+                                delta1(counter,1)=max(searchRes(:,2))-GuessTc;
+                                rerun=1;
+                            end
+                            if(min(searchRes(:,2))<roott-delta(counter,1))
+                                delta(counter,1)=roott-min(searchRes(:,2));
+                                rerun=1;
+                            end
+%                             for Tcc=root(counter,1)-delta(counter,1):0.1:GuessTc+delta1(counter,1)
+%                                 [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
+%                                 if(Tc<root(counter,1)-delta(counter,1))
+%                                     delta(counter,1)=root(counter,1)-Tc;
+%                                     rerun=1;
+%                                 elseif(Tc>GuessTc+delta1(counter,1))
+%                                     delta1(counter,1)=Tc-GuessTc;
+%                                     rerun=1;
+%                                 end
+%                                 if(rerun) 
+%                                     break 
+%                                 end
+%                             end
+                        end
+                        [searchResCount,~]=size(searchRes);
+                        for i=1:searchResCount-1
+                            for j=i+1:searchResCount
+                                %disp(strcat(num2str(i),',',num2str(j)));
+                                C=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
+                                if(C>cinfo(counter,c))
+                                    cinfo(counter,c)=C;
+                                    if(C>1)
+                                    end
                                 end
                             end
                         end
-                        for Tcc=roott-delta(counter,1):0.1:GuessTc+delta1(counter,1)-0.1                                                              
-                            [Tc,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
-                            for Tcc1=Tcc+0.1:0.1:GuessTc+delta1(counter,1)
-                                [Tc1,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc1);
-                                C=abs(Tc-Tc1)/abs(Tcc-Tcc1);
-                                if(C>1)
-                                    exceptions=[exceptions;c,imagnitude,ambtemp,Vw,psol,roott,GuessTc,GuessTc2,delta(counter,1),delta1(counter,1),Tcc,Tcc1];
-                                end
-                            end
-                        end
+                            
+                            
+%                         for Tcc=roott-delta(counter,1):0.1:GuessTc+delta1(counter,1)-0.1                                                              
+%                             [Tc,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
+%                             for Tcc1=Tcc+0.1:0.1:GuessTc+delta1(counter,1)
+%                                 [Tc1,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc1);
+%                                 C=abs(Tc-Tc1)/abs(Tcc-Tcc1);
+%                                 if(C>1)
+%                                     exceptions=[exceptions;c,imagnitude,ambtemp,Vw,psol,roott,GuessTc,GuessTc2,delta(counter,1),delta1(counter,1),Tcc,Tcc1];
+%                                 end
+%                             end
+%                         end
                     end
                 end
             end
@@ -121,6 +157,7 @@ for c1=1:12:conductorCount
     csvwrite(strcat(foldersource,'windinfo.csv'),windinfo);
     csvwrite(strcat(foldersource,'ambtempinfo.csv'),ambtempinfo);
     csvwrite(strcat(foldersource,'currentinfo.csv'),currentinfo);
+    csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
     
     writetable(conductorData,'ConductorValidationResults.csv'); 
 end

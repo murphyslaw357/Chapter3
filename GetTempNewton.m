@@ -11,7 +11,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     sigmab=5.6697e-8;
     g=9.805;
     IIstar=abs(I)^2;
-    GuessTc=((Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4)-273;  
+    GuessTc=(Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons*((1.38e8)+Ta*(1.39e6))+pi*(2.42e-2)*0.645)+Ta;
+    %GuessTc=((Psol+IIstar*(alpha+25*beta))/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4)-273;  
     Tolerance=0.001; %tolerance criteria for Newton's method
     epsilon=1e-9;
     update=realmax;
@@ -109,9 +110,19 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             end
             Nudf=A*(GrPr^m);
             NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*GrPrime);    
-
             Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nudf*Lambdaf+LambdafPrime*Nudf*(GuessTc-Ta)+NudfPrime*Lambdaf*(GuessTc-Ta));
+            
+%             f2=Gr*Pr;
+%             f2prime=Gr*PrPrime+GrPrime*Pr;
+%             f3=(1+((0.559/Pr)^(9/16)))^(16/9);
+%             f3prime=((1+(0.559/Pr)^(9/16))^(7/9))*((0.559/Pr)^(-7/16))*(-1)*(0.559/(Pr^2));
+%             f1=f2/f3;
+%             f1prime=(f3*f2prime-f2*f3prime)/(f3^2);
+%             Nu2=(0.6+0.387*f1^(1/6))^2;
+%             Nu2Prime=2*(0.6+0.387*f1^(1/6))*(1/6)*(0.387*f1^(-5/6))*f1prime;
+%             Pcon=pi*Nu2*Lambdaf*(GuessTc-Ta);
+%             PconPrime=pi*(Nu2*Lambdaf+LambdafPrime*Nu2*(GuessTc-Ta)+Nu2Prime*Lambdaf*(GuessTc-Ta));
         elseif(GuessTc~=Ta && Vw ~=0)
         %mixed convection
             GrPrime=g*(D^3)*(Tfilmk*(vf)-abs(GuessTc-Ta)*(TfilmkPrime*vf+Tfilmk*2*vfPrime))/...

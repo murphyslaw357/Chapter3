@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -61,6 +61,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
             ((Tfilmk^2)*(vf^3));
     Pr=0.715-(2.5e-4)*GuessTfilm;
     GrPr=Gr*Pr;
+            A=0;
+        m=0;
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection
         %lookup A and m
@@ -94,7 +96,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewtonFirs
 
         Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
         PconPrime=pi*(Nudf*Lambdaf+LambdafPrime*Nudf*(GuessTc-Ta)+NudfPrime*Lambdaf*(GuessTc-Ta));
-    
+
     elseif(GuessTc~=Ta && Vw ~=0)
         %mixed convection
         %lookup A and m
