@@ -119,10 +119,12 @@ for c1=1:12:conductorCount
                         end
                         [searchResCount,~]=size(searchRes);
                         
-                        if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
-                            steps(counter)=-1;
-                        else
-                            steps(counter)=1;
+                        if(searchRes<2)
+                            if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
+                                steps(counter)=-1;
+                            else
+                                steps(counter)=1;
+                            end
                         end
                         
                         for i=1:searchResCount-1
@@ -172,6 +174,7 @@ for c1=1:12:conductorCount
     csvwrite(strcat(foldersource,'ambtempinfo.csv'),ambtempinfo);
     csvwrite(strcat(foldersource,'currentinfo.csv'),currentinfo);
     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
+    csvwrite(strcat(foldersource,'stepinfo.csv'),stepinfo);
     
     writetable(conductorData,'ConductorValidationResults.csv'); 
 end
