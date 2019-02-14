@@ -55,11 +55,12 @@ for c1=1:12:conductorCount
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;    
         counter=0;
+        
         for psol=0:maxpsol/spacer:maxpsol
             disp(psol)
             for imagnitude=0:maxcurrent/spacer:maxcurrent
                 IIstar=abs(imagnitude)^2; 
-                for ambtemp=-33:65
+                for ambtemp=-33:98/spacer:65
                     %GuessTc2=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
                     %GuessTc=(psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons*((1.38e8)+ambtemp*(1.39e6))+pi*(2.42e-2)*0.645)+ambtemp;
                     for Vw=0:10/spacer:10
