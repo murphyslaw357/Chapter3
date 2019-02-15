@@ -6,6 +6,8 @@ foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
 %foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
 load(strcat(foldersource,'GrPrSpline.mat'))
+load(strcat(foldersource,'ReNuSpline.mat'))
+load(strcat(foldersource,'NuReSpline.mat'))
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
 
@@ -52,7 +54,7 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=7:12:conductorCount
+for c1=1:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
@@ -74,27 +76,22 @@ for c1=7:12:conductorCount
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
-            if(counter==52029)
-            end
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas);       
-            [roott,~,~,Prad,~,~,~] =GetTempNewton2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f);
-            
+            [roott,~,~,Prad,~,~,~] =GetTempNewton2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);
+%             disp(counter)
             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
             bottomend=min(roott,GuessTc);
 
-             tempSearch=(bottomend-10:searchIncrement:topend+10)';
-             [searchCount,~]=size(tempSearch);
-             tempSearch=[tempSearch,zeros(searchCount,6)];
-             for i=1:searchCount
-                 [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i,1),f);
-                 tempSearch(i,2)=Tc;
-                 tempSearch(i,3)=A;
-                 tempSearch(i,4)=m;
-                 tempSearch(i,5)=C;
-                 tempSearch(i,6)=n;
-             end
+            tempSearch=(bottomend-10:searchIncrement:topend+10)';
              
+            [searchCount,~]=size(tempSearch);
+            tempSearch2=zeros(searchCount);
+            parfor i=1:searchCount
+                [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i),f,ff,ffinv);
+                tempSearch2(i)=Tc;
+            end
+            tempSearch=horzcat(tempSearch,tempSearch2);
             rerun=1;
             reruncounter=0;
             while(rerun)
@@ -119,11 +116,11 @@ for c1=7:12:conductorCount
             end
             [searchResCount,~]=size(searchRes);
             if(searchResCount>1)
-                if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
-                    steps(counter)=-1;
-                else
-                    steps(counter)=1;
-                end
+%                 if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
+%                     steps(counter)=-1;
+%                 else
+%                     steps(counter)=1;
+%                 end
                 ctemp=-1*realmax*ones(searchResCount,searchResCount);
                 for i=1:searchResCount-1
                     for j=i+1:searchResCount
@@ -131,7 +128,7 @@ for c1=7:12:conductorCount
                     end
                 end
                 cs(counter)=max(max(ctemp));
-                if(cs(counter)>1 && winds(counter)==0)
+                if(cs(counter)>1)
                 end
             end
         end
