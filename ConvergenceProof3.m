@@ -5,6 +5,7 @@ foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
 %foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
 %foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
+load(strcat(foldersource,'GrPrSpline.mat'))
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
 
@@ -45,19 +46,18 @@ for psol=0:maxpsol/spacer:maxpsol
     end
 end
 
-
 deltainfo=zeros(weatherPermutationCount,conductorCount);
 delta1info=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:conductorCount
+for c1=7:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
-    for c=7:c1+increment
+    for c=c1:c1+increment
         disp(c)
         Prad1=zeros(weatherPermutationCount,1);
         Prad2=zeros(weatherPermutationCount,1);
@@ -73,10 +73,11 @@ for c1=1:12:conductorCount
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if()
         for counter=1:weatherPermutationCount
+            if(counter==52029)
+            end
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas);       
-            [roott,~,~,Prad,~,~,~] =GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas);
+            [roott,~,~,Prad,~,~,~] =GetTempNewton2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f);
             
             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
@@ -86,7 +87,7 @@ for c1=1:12:conductorCount
              [searchCount,~]=size(tempSearch);
              tempSearch=[tempSearch,zeros(searchCount,6)];
              for i=1:searchCount
-                 [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i,1));
+                 [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i,1),f);
                  tempSearch(i,2)=Tc;
                  tempSearch(i,3)=A;
                  tempSearch(i,4)=m;
@@ -107,11 +108,11 @@ for c1=1:12:conductorCount
                 [row,col]=size(searchRes);
                 if(row>1)
                     if(max(searchRes(:,2))>topend+delta1(counter,1))
-                        delta1(counter,1)=max(searchRes(:,2))-topend;
+                        delta1(counter,1)=0.1+max(searchRes(:,2))-topend;
                         rerun=1;
                     end
                     if(min(searchRes(:,2))<bottomend-delta(counter,1))
-                        delta(counter,1)=bottomend-min(searchRes(:,2));
+                        delta(counter,1)=0.1+bottomend-min(searchRes(:,2));
                         rerun=1;
                     end
                 end
@@ -130,14 +131,16 @@ for c1=1:12:conductorCount
                     end
                 end
                 cs(counter)=max(max(ctemp));
+                if(cs(counter)>1 && winds(counter)==0)
+                end
             end
         end
         
-         rootinfo(:,c)=root;
-         deltainfo(:,c)=delta;
-         delta1info(:,c)=delta1;
-         cinfo(:,c)=cs;
-         stepinfo(:,c)=steps;
+        rootinfo(:,c)=root;
+        deltainfo(:,c)=delta;
+        delta1info(:,c)=delta1;
+        cinfo(:,c)=cs;
+        stepinfo(:,c)=steps;
     end
     toc
 end

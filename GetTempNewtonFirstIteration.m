@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m,C,n] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m,C,n] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -67,32 +67,35 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,A,m,C,n] =GetTempNe
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection
         %lookup A and m
-        if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
-            A=0.675;
-            m=0.058;
-        elseif(GrPr>GrPrlim1 && GrPr<=GrPrlim2)
-            A=0.889;
-            m=0.088;
-        elseif(GrPr>GrPrlim2 && GrPr<=GrPrlim3)
-            A=1.02;
-            m=0.148;
-        elseif(GrPr>GrPrlim3 && GrPr<=GrPrlim4)
-            A=0.85;
-            m=0.188;
-        elseif(GrPr>GrPrlim4 && GrPr<=GrPrlim5)
-            A=0.48;
-            m=0.25;
-        elseif(GrPr>GrPrlim5 && GrPr<=1e12)
-            A=0.125;
-            m=0.333;
-        end
-        if(A==0)
-            msg='error';
-            error(msg)
-        end
-        Nudf=A*(GrPr^m);
-        NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*GrPrime);    
-
+   %             A=0;
+%             m=0;
+%             if(GrPr>=0 && GrPr<=GrPrlim1) %1e-10
+%                 A=0.675;
+%                 m=0.058;
+%             elseif(GrPr>GrPrlim1 && GrPr<=GrPrlim2)
+%                 A=0.889;
+%                 m=0.088;
+%             elseif(GrPr>GrPrlim2 && GrPr<=GrPrlim3)
+%                 A=1.02;
+%                 m=0.148;
+%             elseif(GrPr>GrPrlim3 && GrPr<=GrPrlim4)
+%                 A=0.85;
+%                 m=0.188;
+%             elseif(GrPr>GrPrlim4 && GrPr<=GrPrlim5)
+%                 A=0.48;
+%                 m=0.25;
+%             elseif(GrPr>GrPrlim5 && GrPr<=1e12)
+%                 A=0.125;
+%                 m=0.333;
+%             end
+%             if(A==0)
+%                 msg='error';
+%                 error(msg)
+%             end
+%             Nudf=A*(GrPr^m);
+%               NudfPrime=m*A*(GrPr^(m-1))*(Gr*PrPrime+Pr*GrPrime);   
+            Nudf=fGrPr(GrPr);
+            NudfPrime=differentiate(fGrPr,GrPr); 
         Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
         PconPrime=pi*(Nudf*Lambdaf+LambdafPrime*Nudf*(GuessTc-Ta)+NudfPrime*Lambdaf*(GuessTc-Ta));
 
