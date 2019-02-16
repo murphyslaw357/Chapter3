@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime] =GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -43,39 +43,34 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
             ((Tfilmk^2)*(vf^3));
     Pr=0.715-(2.5e-4)*GuessTfilm;
     GrPr=Gr*Pr;
-        vfPrimePrime=0;
-    dtop=TfilmkPrime*vf+Tfilmk*vfPrime-abs(GuessTc-Ta)*(TfilmkPrime*vfPrime+2*TfilmkPrime*vfPrime+2*Tfilmk*vfPrimePrime)-(TfilmkPrime*vf+2*Tfilmk*vfPrime);
-    GrPrimePrime=g*(D^3)*(((Tfilmk^2)*(vf^3))*dtop-...
-        ((Tfilmk*vf-abs(GuessTc-Ta)*(TfilmkPrime*vf+2*Tfilmk*vfPrime)))*(Tfilmk*(vf^3)+3*(vf^2)*vfPrime*(Tfilmk^2)))/...
-        ((Tfilmk^4)*(vf^6));
+
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection 
         Nudf=fGrPr(GrPr);
         [NudfPrime,NudfPrimePrime]=differentiate(fGrPr,GrPr); 
         NudfPrime=NudfPrime*(Gr*PrPrime+GrPrime*Pr);
-        NudfPrimePrime=NudfPrimePrime*(Gr*PrPrime+GrPrime*Pr)+NudfPrime*(GrPrime*PrPrime+GrPrimePrime*Pr+GrPrime*PrPrime);
+        NudfPrimePrime=NudfPrimePrime*(Gr*PrPrime+GrPrime*Pr)+NudfPrime*(GrPrime*PrPrime+Gr*PrPrimePrime+GrPrimePrime*Pr+GrPrime*PrPrime)
         Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
         PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrime*Lambdaf));
-        PconPrimePrime=pi*(Nudf*LambdafPrime+NudfPrime*Lambdaf+(LambdafPrime*Nudf+NudfPrime*Lambdaf)+(GuessTc-Ta)*(LambdafPrime*NudfPrime+NudfPrimePrime*Lambdaf+NudfPrime*LambdafPrime));
+        PconPrimePrime=pi*(NudfPrime*Lambdaf+Nudf*LambdafPrime+(LambdafPrime*Nudf+NudfPrime*Lambdaf)+(GuessTc-Ta)*(LambdafPrime*NudfPrime+NudfPrimePrime*Lambdaf+NudfPrime*LambdafPrime));
     elseif(GuessTc~=Ta && Vw ~=0)
     %mixed convection
         Nudf=fGrPr(GrPr);
         NudfPrime=differentiate(fGrPr,GrPr);
-        NudfPrime=NudfPrime*(Gr*PrPrime+GrPrime*Pr);
+        NudfPrime
         Req=fNuRe(Nudf);
-        ReqPrime=differentiate(fNuRe,Nudf);
-        ReqPrime=ReqPrime*NudfPrime;
+        ReqPrime=differentiate(fNuRe,Nudf)*NudfPrime*(Gr*PrPrime+GrPrime*Pr);
         Re=sin(phi)*Vw*D/vf;
         RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
         Reeff=sqrt((Re^2)+(Req^2));
         Top=Re*RePrime+Req*ReqPrime;% (GrPrime*Pr+Gr*PrPrime);
+        
         ReeffPrime=Top/Reeff;
-        Nueff=fReNu(Reeff);
         [NueffPrime,NueffPrimePrime]=differentiate(fReNu,Reeff);
-        NueffPrime=NueffPrime*ReeffPrime;
+        Nueff=fReNu(Reeff);
         Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
-        PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrime*Lambdaf));
-        PconPrimePrime=pi*(Nueff*LambdafPrime+NueffPrime*Lambdaf+LambdafPrime*Nueff+NueffPrime*Lambdaf+(GuessTc-Ta)*(LambdafPrime*NueffPrime+NueffPrimePrime*Lambdaf+NueffPrime*LambdafPrime));
+        PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrime*ReeffPrime*Lambdaf));
+        %PconPrimePrime=pi*NueffPrimePrime*Lambdaf*(GuessTc-Ta)+2*pi*NueffPrime*(LambdafPrime*(GuessTc-Ta)+Lambdaf)+2*pi*Nueff*LambdafPrime;
     elseif(GuessTc==Ta && Vw~=0)
     %pure forced    
         Re=sin(phi)*Vw*D/vf;  
@@ -90,7 +85,6 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
     %no convection at all    
         Pcon=0;
         PconPrime=0;
-        PconPrimePrime=0;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%MISMATCH AND UPDATE%%%%%%%%%%%%%%

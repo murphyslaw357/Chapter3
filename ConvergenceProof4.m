@@ -88,7 +88,7 @@ for c1=1:12:conductorCount
             [searchCount,~]=size(tempSearch);
             tempSearch2=zeros(searchCount);
             for i=1:searchCount
-                [Tc,I2R,I2Rprime,Prad,Pradprime,PradPrimePrime,Pcon,Pconprime] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i),f,ff,ffinv);
+                [Tc,I2R,I2Rprime,Prad,Pradprime,PradPrimePrime,Pcon,Pconprime,PconPrimePrime] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i),f,ff,ffinv);
                 tempSearch2(i)=Tc;
             end
             tempSearch=horzcat(tempSearch,tempSearch2);
