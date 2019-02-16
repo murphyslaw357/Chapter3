@@ -122,26 +122,26 @@ for c1=1:12:conductorCount
                     end
                 end
             end
+            cs2(counter)=max(searchRes(:,3));
 
             [searchResCount,~]=size(searchRes);
             if(searchResCount>1)
-                cs2(counter)=max(searchRes(:,3));
-% %                 if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
-% %                     steps(counter)=-1;
-% %                 else
-% %                     steps(counter)=1;
-% %                 end
-%                 ctemp=-1*realmax*ones(searchResCount,searchResCount);
-%                 for i=1:searchResCount-1
-%                     for j=i+1:searchResCount
-%                         ctemp(i,j)=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
-%                     end
+%                 if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
+%                     steps(counter)=-1;
+%                 else
+%                     steps(counter)=1;
 %                 end
-%                 cs(counter)=max(max(ctemp));
-%                 
-%                 if(cs(counter)>1)
-%                 end
-             end
+                ctemp=-1*realmax*ones(searchResCount,searchResCount);
+                for i=1:searchResCount-1
+                    for j=i+1:searchResCount
+                        ctemp(i,j)=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
+                    end
+                end
+                cs(counter)=max(max(ctemp));
+                
+                if(cs(counter)>1)
+                end
+            end
         end
         
         rootinfo(:,c)=root;

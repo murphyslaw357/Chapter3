@@ -43,7 +43,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
             ((Tfilmk^2)*(vf^3));
     Pr=0.715-(2.5e-4)*GuessTfilm;
     GrPr=Gr*Pr;
-        vfPrimePrime=0;
+    vfPrimePrime=0;
     dtop=TfilmkPrime*vf+Tfilmk*vfPrime-abs(GuessTc-Ta)*(TfilmkPrime*vfPrime+2*TfilmkPrime*vfPrime+2*Tfilmk*vfPrimePrime)-(TfilmkPrime*vf+2*Tfilmk*vfPrime);
     GrPrimePrime=g*(D^3)*(((Tfilmk^2)*(vf^3))*dtop-...
         ((Tfilmk*vf-abs(GuessTc-Ta)*(TfilmkPrime*vf+2*Tfilmk*vfPrime)))*(Tfilmk*(vf^3)+3*(vf^2)*vfPrime*(Tfilmk^2)))/...
