@@ -31,6 +31,8 @@ f = fit(grprx',fgrpr','smoothingspline');
 save('GrPrSpline.mat')
 
 fgrpr2=0.6+0.387.*((grprx./(1+((0.559)))).^(1/6))
+clear
+clc
 lim1=1e-4;
 lim2=4e-3;
 lim3=9e-2;
@@ -57,7 +59,8 @@ f7=0.0208.*x7.^0.814;
 
 x=[x1 x2 x3 x4 x5 x6 x7];
 f=[f1 f2 f3 f4 f5 f6 f7];
-
+ff = fit(x',f','smoothingspline');
+ffinv = fit(f',x','smoothingspline');
 
 % %IEEE 738
 % g1=1.01+1.35.*x.^0.52;
