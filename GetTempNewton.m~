@@ -45,8 +45,12 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         elseif(GuessTc<Ta)
             Gr=(g*(D^3)*(Ta-GuessTc))/(Tfilmk*(vf^2));  
             GrPrime=-1*(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
-                Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3)); 
+                Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3));
+            GrPrime(i)=(g*(D^3)).*(Tfilmk(i)*vf(i)-(GuessTc(i)-Ta)*(TfilmkPrime*vf(i)+...
+                Tfilmk(i)*2.*vfPrime))/((Tfilmk(i)^2).*(vf(i)^3));
         end
+    
+        
           
         Lambdaf=(2.42e-2)+(7.2e-5)*GuessTfilm;
         LambdafPrime=3.6e-5;

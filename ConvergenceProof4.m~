@@ -27,11 +27,18 @@ searchIncrement=0.1;
 
 weatherPermutationCount=(spacer+1)^4;
 
-maxpsol=1050;%*diam*alphas;
+maxpsol=1050;
+
 psols=zeros(weatherPermutationCount,1);
 winds=zeros(weatherPermutationCount,1);
 ambtemps=zeros(weatherPermutationCount,1);
 currents=zeros(weatherPermutationCount,1);
+hs=zeros(weatherPermutationCount,1);
+hprimes=zeros(weatherPermutationCount,1);
+pconprimeprimes=zeros(weatherPermutationCount,1);
+pradprimeprimes=zeros(weatherPermutationCount,1);
+initguess=zeros(weatherPermutationCount,1);
+
 tic
 counter=0;
 for psol=0:maxpsol/spacer:maxpsol
@@ -61,45 +68,57 @@ for c1=1:12:conductorCount
     end
     for c=c1:c1+increment
         disp(c)
-        Prad1=zeros(weatherPermutationCount,1);
-        Prad2=zeros(weatherPermutationCount,1);
         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
+        prads=zeros(weatherPermutationCount,1);
+        pcons=zeros(weatherPermutationCount,1);
         cs=(-1*realmax).*ones(weatherPermutationCount,1);
-        cs2=(-1*realmax).*ones(weatherPermutationCount,1);
-        steps=zeros(weatherPermutationCount,1);
-      
+        cs2=zeros(weatherPermutationCount,1);
+        
         cdata=conductorData(c,:);
         maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
-            GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas);       
-            [roott,~,~,Prad,~,~,~] =GetTempNewton2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);
-             disp(counter)
+            GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);       
+            initguess(counter)=GuessTc;
+            [roott,~,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);
+            prads(counter)=Prad;
+            pcons(counter)=Pcon;
+            disp(counter)
             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
             bottomend=min(roott,GuessTc);
-
-            tempSearch=(bottomend-10:searchIncrement:topend+10)';
+            temps=(bottomend-10:searchIncrement:topend+10)';
              
-            [searchCount,~]=size(tempSearch);
-            tempSearch2=zeros(searchCount,1);
-            tempSearch3=zeros(searchCount,1);
-            for i=1:searchCount
-                [Tc,I2R,I2Rprime,Prad,Pradprime,PradPrimePrime,Pcon,Pconprime,PconPrimePrime] =GetTempNewtonFirstIteration(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(i),f,ff,ffinv);
-                h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
-                hprime=I2Rprime-Pconprime-Pradprime;
-                hprimeprime=-1*PconPrimePrime-PradPrimePrime;
-                tempSearch3(i)=abs(1-((hprime^2)-h*hprimeprime)/(hprime^2));
-                tempSearch2(i)=Tc;
-%                 if(tempSearch3(i)>1)
-%                 end
-            end
-            tempSearch=horzcat(tempSearch,tempSearch2,tempSearch3);
+            [searchCount,~]=size(temps);
+            tempSearch=zeros(searchCount,14);
+            tempSearch(:,1)=temps;
+            [Tc,I2R,I2Rprime,Prad,Pradprime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
+            
+            h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
+            %hs(counter)=h;
+            hprime=I2Rprime-PconPrime-Pradprime;
+            %hprimes(counter)=hprime;
+            hprimeprime=-1*PconPrimePrime-PradPrimePrime;
+            %pconprimeprimes(counter)=PconPrimePrime;
+            %pradprimeprimes(counter)=PradPrimePrime;
+            tempSearch(:,2)=Tc;
+            tempSearch(:,3)=abs(1-((hprime.^2)-h.*hprimeprime)./(hprime.^2));
+            tempSearch(:,4)=h;
+            tempSearch(:,5)=hprime;
+            tempSearch(:,6)=hprimeprime;
+            tempSearch(:,7)=Pcon;
+            tempSearch(:,8)=PconPrime;
+            tempSearch(:,9)=PconPrimePrime;
+            tempSearch(:,10)=Prad;
+            tempSearch(:,11)=PradPrime;
+            tempSearch(:,12)=PradPrimePrime;
+            tempSearch(:,13)=IR2;
+            tempSearch(:,14)=IR2Prime;
             rerun=1;
             reruncounter=0;
             while(rerun)
@@ -113,33 +132,19 @@ for c1=1:12:conductorCount
                 [row,col]=size(searchRes);
                 if(row>1)
                     if(max(searchRes(:,2))>topend+delta1(counter,1))
-                        delta1(counter,1)=0.1+max(searchRes(:,2))-topend;
+                        delta1(counter,1)=0.05+max(searchRes(:,2))-topend;
                         rerun=1;
                     end
                     if(min(searchRes(:,2))<bottomend-delta(counter,1))
-                        delta(counter,1)=0.1+bottomend-min(searchRes(:,2));
+                        delta(counter,1)=0.05+bottomend-min(searchRes(:,2));
                         rerun=1;
                     end
                 end
             end
-            cs2(counter)=max(searchRes(:,3));
 
-            [searchResCount,~]=size(searchRes);
-            if(searchResCount>1)
-%                 if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
-%                     steps(counter)=-1;
-%                 else
-%                     steps(counter)=1;
-%                 end
-                ctemp=-1*realmax*ones(searchResCount,searchResCount);
-                for i=1:searchResCount-1
-                    for j=i+1:searchResCount
-                        ctemp(i,j)=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
-                    end
-                end
-                cs(counter)=max(max(ctemp));
-                
-                if(cs(counter)>1)
+            if(row>1)
+                cs2(counter)=max(searchRes(:,3));
+                if(cs2(counter)>1 && winds(counter)~=0)
                 end
             end
         end
@@ -147,20 +152,19 @@ for c1=1:12:conductorCount
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
-        cinfo(:,c)=cs;
-        stepinfo(:,c)=steps;
+        cinfo(:,c)=cs2;
     end
     toc
+    csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
+    csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
+    csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
+    csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
 end
 
-csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
-csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
-csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
 %csvwrite(strcat(foldersource,'psolinfo.csv'),psolinfo);
 %csvwrite(strcat(foldersource,'windinfo.csv'),windinfo);
 %csvwrite(strcat(foldersource,'ambtempinfo.csv'),ambtempinfo);
 %csvwrite(strcat(foldersource,'currentinfo.csv'),currentinfo);
-csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
-csvwrite(strcat(foldersource,'stepinfo.csv'),stepinfo);
+%csvwrite(strcat(foldersource,'stepinfo.csv'),stepinfo);
 
 writetable(conductorData,'ConductorValidationResults.csv'); 
