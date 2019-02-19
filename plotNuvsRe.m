@@ -3,18 +3,18 @@ clc
 close all
 
 grprlim1=0;
-grprlim2=1e-04;
-grprlim3=0.1;
-grprlim4=95;
-grprlim5=1e4;
-grprlim6=1e7;
+grprlim2=(0.889/0.675)^(1/(0.058-0.088));
+grprlim3=(1.02/0.889)^(1/(0.088-0.148));
+grprlim4=(0.85/1.02)^(1/(0.148-0.188));
+grprlim5=(0.48/0.85)^(1/(0.188-0.25));
+grprlim6=(0.125/0.48)^(1/(0.25-0.333));
 grprlim7=1e12;
-grprx1=(grprlim1:(grprlim2-grprlim1)/100:grprlim2);
-grprx2=(grprlim2:(grprlim3-grprlim2)/100:grprlim3);
-grprx3=(grprlim3:(grprlim4-grprlim3)/100:grprlim4);
-grprx4=(grprlim4:(grprlim5-grprlim4)/100:grprlim5);
-grprx5=(grprlim5:(grprlim6-grprlim5)/100:grprlim6);
-grprx6=(grprlim6:(grprlim7-grprlim6)/100:grprlim7);
+grprx1=(grprlim1:(grprlim2-grprlim1)/1000:grprlim2);
+grprx2=(grprlim2:(grprlim3-grprlim2)/1000:grprlim3);
+grprx3=(grprlim3:(grprlim4-grprlim3)/1000:grprlim4);
+grprx4=(grprlim4:(grprlim5-grprlim4)/1000:grprlim5);
+grprx5=(grprlim5:(grprlim6-grprlim5)/1000:grprlim6);
+grprx6=(grprlim6:(grprlim7-grprlim6)/1000:grprlim7);
 
 fgrpr1=0.675.*grprx1.^0.058;
 fgrpr2=0.889.*grprx2.^0.088;
