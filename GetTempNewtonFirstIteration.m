@@ -43,7 +43,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
             ((Tfilmk^2)*(vf^3));
     Pr=0.715-(2.5e-4)*GuessTfilm;
     GrPr=Gr*Pr;
-        vfPrimePrime=0;
+    vfPrimePrime=0;
     dtop=TfilmkPrime*vf+Tfilmk*vfPrime-abs(GuessTc-Ta)*(TfilmkPrime*vfPrime+2*TfilmkPrime*vfPrime+2*Tfilmk*vfPrimePrime)-(TfilmkPrime*vf+2*Tfilmk*vfPrime);
     GrPrimePrime=g*(D^3)*(((Tfilmk^2)*(vf^3))*dtop-...
         ((Tfilmk*vf-abs(GuessTc-Ta)*(TfilmkPrime*vf+2*Tfilmk*vfPrime)))*(Tfilmk*(vf^3)+3*(vf^2)*vfPrime*(Tfilmk^2)))/...
@@ -51,41 +51,45 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
     if(GuessTc~=Ta && Vw==0)
         %pure natural convection 
         Nudf=fGrPr(GrPr);
-        [NudfPrime,NudfPrimePrime]=differentiate(fGrPr,GrPr); 
-        NudfPrime=NudfPrime*(Gr*PrPrime+GrPrime*Pr);
-        NudfPrimePrime=NudfPrimePrime*(Gr*PrPrime+GrPrime*Pr)+NudfPrime*(GrPrime*PrPrime+GrPrimePrime*Pr+GrPrime*PrPrime);
+        [NudfPrimedgrpr,NudfPrimePrimedgrpr2]=differentiate(fGrPr,GrPr); 
+        NudfPrimedtc=NudfPrimedgrpr*(Gr*PrPrime+GrPrime*Pr);
+        NudfPrimePrimedtc2=NudfPrimePrimedgrpr2*(Gr*PrPrime+GrPrime*Pr)+NudfPrimedgrpr*(GrPrime*PrPrime+GrPrimePrime*Pr+GrPrime*PrPrime);
         Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
-        PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrime*Lambdaf));
-        PconPrimePrime=pi*(Nudf*LambdafPrime+NudfPrime*Lambdaf+(LambdafPrime*Nudf+NudfPrime*Lambdaf)+(GuessTc-Ta)*(LambdafPrime*NudfPrime+NudfPrimePrime*Lambdaf+NudfPrime*LambdafPrime));
+        PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf));
+        PconPrimePrime=pi*(Nudf*LambdafPrime+NudfPrimedtc*Lambdaf+(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf)+(GuessTc-Ta)*(LambdafPrime*NudfPrimedtc+NudfPrimePrimedtc2*Lambdaf+NudfPrimedtc*LambdafPrime));
     elseif(GuessTc~=Ta && Vw ~=0)
     %mixed convection
         Nudf=fGrPr(GrPr);
-        NudfPrime=differentiate(fGrPr,GrPr);
-        NudfPrime=NudfPrime*(Gr*PrPrime+GrPrime*Pr);
+        NudfPrimedgrpr=differentiate(fGrPr,GrPr);
+        NudfPrimedtc=NudfPrimedgrpr*(Gr*PrPrime+GrPrime*Pr);
         Req=fNuRe(Nudf);
-        ReqPrime=differentiate(fNuRe,Nudf);
-        ReqPrime=ReqPrime*NudfPrime;
+        ReqPrimednudf=differentiate(fNuRe,Nudf);
+        ReqPrimedtc=ReqPrimednudf*NudfPrimedtc;
         Re=sin(phi)*Vw*D/vf;
-        RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
+        RePrimedtc=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
         Reeff=sqrt((Re^2)+(Req^2));
-        Top=Re*RePrime+Req*ReqPrime;% (GrPrime*Pr+Gr*PrPrime);
-        ReeffPrime=Top/Reeff;
+        Top=Re*RePrimedtc+Req*ReqPrimedtc;% (GrPrime*Pr+Gr*PrPrime);
+        ReeffPrimedtc=Top/Reeff;
+        ReeffPrimePrimedtc2=(Reeff*dtop-Top*ReeffPrimedtc)/(Reeff^2);
         Nueff=fReNu(Reeff);
-        [NueffPrime,NueffPrimePrime]=differentiate(fReNu,Reeff);
-        NueffPrime=NueffPrime*ReeffPrime;
+        [NueffPrimedreeff,NueffPrimePrimedreeff2]=differentiate(fReNu,Reeff);
+        NueffPrimedtc=NueffPrimedreeff*ReeffPrimedtc;
+        NueffPrimePrimedtc2=NueffPrimePrimedreeff2*ReeffPrimedtc+NueffPrimedreeff*ReeffPrimePrimedtc2;
         Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
-        PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrime*Lambdaf));
-        PconPrimePrime=pi*(Nueff*LambdafPrime+NueffPrime*Lambdaf+LambdafPrime*Nueff+NueffPrime*Lambdaf+(GuessTc-Ta)*(LambdafPrime*NueffPrime+NueffPrimePrime*Lambdaf+NueffPrime*LambdafPrime));
+        PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrimedtc*Lambdaf));
+        PconPrimePrime=pi*(Nueff*LambdafPrime+NueffPrimedtc*Lambdaf+LambdafPrime*Nueff+NueffPrimedtc*Lambdaf+(GuessTc-Ta)*(LambdafPrime*NueffPrimedtc+NueffPrimePrimedtc2*Lambdaf+NueffPrimedtc*LambdafPrime));
     elseif(GuessTc==Ta && Vw~=0)
     %pure forced    
         Re=sin(phi)*Vw*D/vf;  
-        RePrime=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
-        [NuPrime,NuPrimePrime]=differentiate(fReNu,Re);
-        NuPrime=NuPrime*RePrime;
-        Nu=fReNu(Re);
+        RePrimedtc=-(sin(phi)*Vw*D*vfPrime)/(vf^2);
+        RePrimePrimedtc2=(-1*(vf)*sin(phi)*Vw*D*vfPrimePrime+sin(phi)*Vw*D*vfPrime*2*vfPrime)/(vf^3);
+        Nu=fReNu(Re);        
+        [NuPrimedre,NuPrimePrimedre2]=differentiate(fReNu,Re);
+        NuPrimedtc=NuPrimedre*RePrimedtc;
+        NuPrimePrimedtc2=NuPrimePrimedre2*RePrimedtc+NuPrimedre*RePrimePrimedtc2;
         Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
-        PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrime*Lambdaf));
-        PconPrimePrime=pi*(Nu*LambdafPrime+NuPrime*Lambdaf+LambdafPrime*Nu+NuPrime*Lambdaf+(GuessTc-Ta)*(LambdafPrime*NuPrime+NuPrimePrime*Lambdaf+NuPrime*LambdafPrime));
+        PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrimedtc*Lambdaf));
+        PconPrimePrime=pi*(Nu*LambdafPrime+NuPrimedtc*Lambdaf+LambdafPrime*Nu+NuPrimedtc*Lambdaf+(GuessTc-Ta)*(LambdafPrime*NuPrimedtc+NuPrimePrimedtc2*Lambdaf+NuPrimedtc*LambdafPrime));
     else
     %no convection at all    
         Pcon=0;

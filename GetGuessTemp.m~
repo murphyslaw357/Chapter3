@@ -52,6 +52,6 @@ if(I>0)
      c=0.56515;
      d=0.29785;
      e=1.049;
-     GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
+     GuessTc=e*Ta+a+b*Pj/(c+Vw)+d*Pj;
      %x=[((currents.*maxcurrent).^2).*(alpha+25*beta),winds,ambtemps];
 end

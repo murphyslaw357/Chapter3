@@ -26,7 +26,10 @@ fgrpr6=0.125.*grprx6.^0.333;
 grprx=[grprx1 grprx2 grprx3 grprx4 grprx5 grprx6];
 fgrpr=[fgrpr1 fgrpr2 fgrpr3 fgrpr4 fgrpr5 fgrpr6];
 
+
 f = fit(grprx',fgrpr','smoothingspline');
+
+f2= spline(grprx',fgrpr');
 % df = differentiate(f,grprx');
 save('GrPrSpline.mat')
 
