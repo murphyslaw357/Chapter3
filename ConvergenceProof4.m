@@ -1,8 +1,8 @@
 clear
 clc
 
-%foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
-foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+%foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
 %foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
 load(strcat(foldersource,'GrPrSpline.mat'))
@@ -95,9 +95,9 @@ for c1=1:12:conductorCount
             temps=(bottomend-10:searchIncrement:topend+10)';
              
             [searchCount,~]=size(temps);
-            tempSearch=zeros(searchCount,14);
+            tempSearch=zeros(searchCount,20);
             tempSearch(:,1)=temps;
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
             
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             %hs(counter)=h;
@@ -107,7 +107,7 @@ for c1=1:12:conductorCount
             %pconprimeprimes(counter)=PconPrimePrime;
             %pradprimeprimes(counter)=PradPrimePrime;
             tempSearch(:,2)=Tc;
-            tempSearch(:,3)=abs(1-((hprime.^2)-h.*hprimeprime)./(hprime.^2));
+            tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
             tempSearch(:,4)=h;
             tempSearch(:,5)=hprime;
             tempSearch(:,6)=hprimeprime;
@@ -119,8 +119,13 @@ for c1=1:12:conductorCount
             tempSearch(:,12)=PradPrimePrime;
             tempSearch(:,13)=I2R;
             tempSearch(:,14)=I2Rprime;
+            tempSearch(:,15)=Gr;
+            tempSearch(:,16)=GrPrime;
             rerun=1;
             reruncounter=0;
+            if(counter==257)
+            
+            end
             while(rerun)
                 rerun=0;
                 reruncounter=reruncounter+1;
@@ -128,7 +133,7 @@ for c1=1:12:conductorCount
                     msg='error condition!';
                     error(msg)
                 end
-                searchRes=tempSearch(tempSearch(:,1)>bottomend-delta(counter,1)& tempSearch(:,1)<topend+delta1(counter,1),:);
+                searchRes=tempSearch(tempSearch(:,1)>=bottomend-delta(counter,1)& tempSearch(:,1)<=topend+delta1(counter,1),:);
                 [row,col]=size(searchRes);
                 if(row>1)
                     if(max(searchRes(:,2))>topend+delta1(counter,1))
@@ -144,7 +149,7 @@ for c1=1:12:conductorCount
 
             if(row>1)
                 cs2(counter)=max(searchRes(:,3));
-                if(cs2(counter)>1 && winds(counter)~=0)
+                if(cs2(counter)>1)
                 end
             end
         end

@@ -44,14 +44,19 @@ Prad=0;
 Pj=((I^2)*(alpha+beta*25));
 GuessTc=Ta;
 if(I>0)
-%      a=-1.314;
-%      b=2.656;
-%      d=3.007;
-     a=0.57691;
-     b=1.9645;
-     c=0.56515;
-     d=0.29785;
-     e=1.049;
+%      a=0.57711;
+%      b=1.9637;
+%      c=0.56494;
+%      d=0.29798;
+%      e=1.0489;
+a=2.4113;
+b=1.8582;
+c=0.53887;
+d=0.27644;
+e=1.0476;
      GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
      %x=[((currents.*maxcurrent).^2).*(alpha+25*beta),winds,ambtemps];
+end
+if(GuessTc<Ta)
+    GuessTc=Ta;
 end

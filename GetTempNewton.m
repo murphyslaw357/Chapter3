@@ -37,16 +37,18 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         vf=((1.32e-5)+(9.5e-8)*GuessTfilm)*((1-((6.5e-3)*H)/288.16)^-5.2561);
 
         Tfilmk=GuessTfilm+273;
-        
-        if(GuessTc>=Ta)
-            Gr=(g*(D^3)*(GuessTc-Ta))/(Tfilmk*(vf^2));   
-            GrPrime=(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
-                Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3));
-        elseif(GuessTc<Ta)
-            Gr=(g*(D^3)*(Ta-GuessTc))/(Tfilmk*(vf^2));  
-            GrPrime=-1*(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
-                Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3)); 
-        end
+        Gr=(g*(D^3).*abs(GuessTc-Ta))./(Tfilmk.*(vf.^2));  
+        GrPrime=g*(D^3).*((Tfilmk.*(vf.^2)).*((GuessTc-Ta)./abs(GuessTc-Ta))-abs(GuessTc-Ta).*(TfilmkPrime*vf.^2+...
+            Tfilmk*2.*vf.*vfPrime))/((Tfilmk^2).*(vf^4));
+%         if(GuessTc>=Ta)
+%             
+%             GrPrime=(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
+%                 Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3));
+%         elseif(GuessTc<Ta)
+%               
+%             GrPrime=-1*(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
+%                 Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3)); 
+%         end
           
         Lambdaf=(2.42e-2)+(7.2e-5)*GuessTfilm;
         LambdafPrime=3.6e-5;
