@@ -27,14 +27,14 @@ grprx=[grprx1(1:end-1) grprx2(1:end-1) grprx3(1:end-1) grprx4(1:end-1) grprx5(1:
 fgrpr=[fgrpr1(1:end-1) fgrpr2(1:end-1) fgrpr3(1:end-1) fgrpr4(1:end-1) fgrpr5(1:end-1) fgrpr6];
 
 
-[f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
-
-% df = differentiate(f,grprx');
-save('GrPrSpline.mat')
-
-% fgrpr2=0.6+0.387.*((grprx./(1+((0.559)))).^(1/6))
-clear
-clc
+% [f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
+% 
+% % df = differentiate(f,grprx');
+% save('GrPrSpline.mat')
+% 
+% % fgrpr2=0.6+0.387.*((grprx./(1+((0.559)))).^(1/6))
+% clear
+% clc
 % lim1=1e-4;
 % lim2=4e-3;
 % lim3=9e-2;
@@ -58,8 +58,8 @@ x2=(lim2:(lim3-lim2)/100:lim3);
 x3=(lim3:(lim4-lim3)/1000:lim4);
 x4=(lim4:(lim5-lim4)/1000:lim5);
 x5=(lim5:(lim6-lim5)/1000:lim6);
-x6=(lim6:(lim7-lim6)/1000:lim7);
-x7=(lim7:(lim8-lim7)/10000:lim8);
+x6=(lim6:(lim7-lim6)/10000:lim7);
+x7=(lim7:(lim8-lim7)/100000:lim8);
 
 
 

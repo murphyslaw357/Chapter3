@@ -97,7 +97,7 @@ for c1=1:12:conductorCount
             [searchCount,~]=size(temps);
             tempSearch=zeros(searchCount,20);
             tempSearch(:,1)=temps;
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Req] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
             
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             %hs(counter)=h;
@@ -121,6 +121,7 @@ for c1=1:12:conductorCount
             tempSearch(:,14)=I2Rprime;
             tempSearch(:,15)=Gr;
             tempSearch(:,16)=GrPrime;
+            tempSearch(:,17)=Req;
             rerun=1;
             reruncounter=0;
             if(counter==257)
