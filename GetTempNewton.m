@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,NudfPrimedgrpr,NudfPrimePrimedgrpr2)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -57,8 +57,13 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         GrPr=Gr*Pr;
         %Natural convection
         Nudf=fGrPr(GrPr);
-        NudfPrimedgrpr=differentiate(fGrPr,GrPr); 
-        NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
+%         NudfPrimedgrpr=differentiate(fGrPr,GrPr); 
+%         NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
+%coef=coeffvalues(fGrPr);
+    %NudfPrimedgrpr=cfit(fittype('b*a*x^(b-1)'),coef(1),coef(2));
+    
+    NudfPrimedtc=NudfPrimedgrpr(GrPr).*(Gr.*PrPrime+GrPrime.*Pr);
+    
         %Mixed convection
         Re=(sin(phi)*Vw*D)./vf;  
         RePrimedtc=-((sin(phi)*Vw*D).*vfPrime)./(vf.^2);

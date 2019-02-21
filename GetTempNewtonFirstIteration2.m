@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Req] =GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe,NudfPrimedgrpr,NudfPrimePrimedgrpr2)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -80,10 +80,11 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
     
     %Natural convection
     Nudf=fGrPr(GrPr);
-    [NudfPrimedgrpr,NudfPrimePrimedgrpr2]=differentiate(fGrPr,GrPr); 
-    NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
-    NudfPrimePrimedtc2=NudfPrimePrimedgrpr2.*(Gr.*PrPrime+GrPrime.*Pr)+...
-        NudfPrimedgrpr.*(GrPrime.*PrPrime+GrPrimePrime.*Pr+GrPrime.*PrPrime);
+    %[NudfPrimedgrpr,NudfPrimePrimedgrpr2]=differentiate(fGrPr,GrPr); 
+
+    NudfPrimedtc=NudfPrimedgrpr(GrPr).*(Gr.*PrPrime+GrPrime.*Pr);
+    NudfPrimePrimedtc2=NudfPrimePrimedgrpr2(GrPr).*(Gr.*PrPrime+GrPrime.*Pr)+...
+        NudfPrimedgrpr(GrPr).*(GrPrime.*PrPrime+GrPrimePrime.*Pr+GrPrime.*PrPrime);
 
     %Mixed convection
     Re=(sin(phi)*Vw*D)./vf;  
@@ -122,12 +123,12 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
 %             PconPrime(i)=pi*(Nudf(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i)));
 %             PconPrimePrime(i)=pi*(Nudf(i)*LambdafPrime+NudfPrimedtc(i)*Lambdaf(i)+(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i))+(GuessTc(i)-Ta)*(LambdafPrime*NudfPrimedtc(i)+NudfPrimePrimedtc2(i)*Lambdaf(i)+NudfPrimedtc(i)*LambdafPrime));
 %         else
-            if(GuessTc(i)~=Ta)% && Vw ~=0)
+            if((GuessTc(i)-Ta)>0.1)% && Vw ~=0)
         %mixed convection
             Pcon(i)=pi*Nueff(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nueff(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nueff(i)+NueffPrimedtc(i)*Lambdaf(i)));
             PconPrimePrime(i)=pi*(Nueff(i)*LambdafPrime+NueffPrimedtc(i)*Lambdaf(i)+LambdafPrime*Nueff(i)+NueffPrimedtc(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*NueffPrimedtc(i)+NueffPrimePrimedtc2(i)*Lambdaf(i)+NueffPrimedtc(i)*LambdafPrime));
-        elseif(GuessTc(i)==Ta && Vw~=0)
+        elseif(GuessTc(i)-Ta<=0.1 && Vw~=0)
         %pure forced    
             Pcon(i)=pi*Nu(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nu(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nu(i)+NuPrimedtc(i)*Lambdaf(i)));

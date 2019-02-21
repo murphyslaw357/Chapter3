@@ -43,20 +43,26 @@ Pcon=0;
 Prad=0;
 Pj=((I^2)*(alpha+beta*25));
 GuessTc=Ta;
+
 if(I>0)
 %      a=0.57711;
 %      b=1.9637;
 %      c=0.56494;
 %      d=0.29798;
 %      e=1.0489;
-a=2.4113;
-b=1.8582;
-c=0.53887;
-d=0.27644;
-e=1.0476;
+    a=0.43012;
+    b=21.496;
+    c=3.0337;
+    d=-0.97255;
+    e=1.087;
      GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
      %x=[((currents.*maxcurrent).^2).*(alpha+25*beta),winds,ambtemps];
 end
 if(GuessTc<Ta)
     GuessTc=Ta;
 end
+% IR2s=((currents.*maxcurrent).^2).*(alpha+25*beta);
+%x=[IR2s,winds,ambtemps];
+%modelfun = @(b,x)b(1) + b(2)*x(:,1)./(b(3)+x(:,2)) + b(4)*x(:,1)+b(5).*x(:,3);
+%beta0 = [2.4 1.85 0.5 0.27 1.04];
+%mdl = fitnlm(x,root,modelfun,beta0)

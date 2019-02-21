@@ -11,6 +11,10 @@ load(strcat(foldersource,'NuReSpline.mat'))
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
 
+coef=coeffvalues(f);
+NudfPrimedgrpr=cfit(fittype('b*a*x^(b-1)'),coef(1),coef(2));
+NudfPrimePrimedgrpr2=cfit(fittype('(b-1)*b*a*x^(b-2)'),coef(1),coef(2));
+
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
@@ -39,10 +43,9 @@ pconprimeprimes=zeros(weatherPermutationCount,1);
 pradprimeprimes=zeros(weatherPermutationCount,1);
 initguess=zeros(weatherPermutationCount,1);
 
-tic
 counter=0;
-for psol=0:maxpsol/spacer:maxpsol
-    for imagnitude=0:1/spacer:1
+for imagnitude=0:(1.5)/spacer:1.5
+    for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
             for Vw=0:10/spacer:10
                 counter=counter+1;
@@ -55,6 +58,8 @@ for psol=0:maxpsol/spacer:maxpsol
     end
 end
 
+% tic
+convergeCurrents=zeros(conductorCount,1);
 deltainfo=zeros(weatherPermutationCount,conductorCount);
 delta1info=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
@@ -66,29 +71,30 @@ for c1=1:12:conductorCount
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
-    for c=c1:c1+increment
+    parfor c=c1:c1+increment
         disp(c)
+        convergeCurrent=0;
         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
         prads=zeros(weatherPermutationCount,1);
         pcons=zeros(weatherPermutationCount,1);
-        cs=(-1*realmax).*ones(weatherPermutationCount,1);
+        %cs=(-1*realmax).*ones(weatherPermutationCount,1);
         cs2=zeros(weatherPermutationCount,1);
         
         cdata=conductorData(c,:);
-        maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
+        maxcurrent=ceil(cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);       
-            initguess(counter)=GuessTc;
-            [roott,~,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);
+            %initguess(counter)=GuessTc;
+            [roott,~,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
             prads(counter)=Prad;
             pcons(counter)=Pcon;
-            disp(counter)
+            %disp(counter)
             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
             bottomend=min(roott,GuessTc);
@@ -97,15 +103,11 @@ for c1=1:12:conductorCount
             [searchCount,~]=size(temps);
             tempSearch=zeros(searchCount,20);
             tempSearch(:,1)=temps;
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Req] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv);
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
             
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
-            %hs(counter)=h;
             hprime=I2Rprime-PconPrime-PradPrime;
-            %hprimes(counter)=hprime;
             hprimeprime=-1*PconPrimePrime-PradPrimePrime;
-            %pconprimeprimes(counter)=PconPrimePrime;
-            %pradprimeprimes(counter)=PradPrimePrime;
             tempSearch(:,2)=Tc;
             tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
             tempSearch(:,4)=h;
@@ -121,12 +123,10 @@ for c1=1:12:conductorCount
             tempSearch(:,14)=I2Rprime;
             tempSearch(:,15)=Gr;
             tempSearch(:,16)=GrPrime;
-            tempSearch(:,17)=Req;
+            tempSearch(:,17)=Nudf;
             rerun=1;
             reruncounter=0;
-            if(counter==257)
-            
-            end
+
             while(rerun)
                 rerun=0;
                 reruncounter=reruncounter+1;
@@ -150,7 +150,8 @@ for c1=1:12:conductorCount
 
             if(row>1)
                 cs2(counter)=max(searchRes(:,3));
-                if(cs2(counter)>1)
+                if(cs2(counter)>1 && currents(counter)>convergeCurrent)
+                    convergeCurrent=currents(counter);
                 end
             end
         end
@@ -158,19 +159,21 @@ for c1=1:12:conductorCount
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
+        convergeCurrents(c)=convergeCurrent;
         cinfo(:,c)=cs2;
+%         toc
     end
-    toc
+    
     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
+    csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);
 end
 
-%csvwrite(strcat(foldersource,'psolinfo.csv'),psolinfo);
-%csvwrite(strcat(foldersource,'windinfo.csv'),windinfo);
-%csvwrite(strcat(foldersource,'ambtempinfo.csv'),ambtempinfo);
-%csvwrite(strcat(foldersource,'currentinfo.csv'),currentinfo);
-%csvwrite(strcat(foldersource,'stepinfo.csv'),stepinfo);
+csvwrite(strcat(foldersource,'psols.csv'),psols);
+csvwrite(strcat(foldersource,'winds.csv'),winds);
+csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
+csvwrite(strcat(foldersource,'currents.csv'),currents);
 
-writetable(conductorData,'ConductorValidationResults.csv'); 
+%writetable(conductorData,'ConductorValidationResults.csv'); 
