@@ -42,24 +42,32 @@ hprimes=zeros(weatherPermutationCount,1);
 pconprimeprimes=zeros(weatherPermutationCount,1);
 pradprimeprimes=zeros(weatherPermutationCount,1);
 initguess=zeros(weatherPermutationCount,1);
+pconas=zeros(weatherPermutationCount,1);
+pconbs=zeros(weatherPermutationCount,1);
+pconrs=zeros(weatherPermutationCount,1);
+pradas=zeros(weatherPermutationCount,1);
+pradbs=zeros(weatherPermutationCount,1);
+pradrs=zeros(weatherPermutationCount,1);
 
+% Vw=0;
 counter=0;
+psol=0;
 for imagnitude=0:(1.5)/spacer:1.5
-    for psol=0:maxpsol/spacer:maxpsol
+     for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
-            for Vw=0:10/spacer:10
+             for Vw=0:10/spacer:10
                 counter=counter+1;
                 psols(counter)=psol;
                 winds(counter)=Vw;
                 ambtemps(counter)=ambtemp;
                 currents(counter)=imagnitude;
-            end
+             end
         end
-    end
+     end
 end
 
 % tic
-convergeCurrents=zeros(conductorCount,1);
+convergeCurrents=zeros(conductorCount,2);
 deltainfo=zeros(weatherPermutationCount,conductorCount);
 delta1info=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
@@ -71,7 +79,7 @@ for c1=1:12:conductorCount
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
-    parfor c=c1:c1+increment
+    for c=c1:c1+increment
         disp(c)
         convergeCurrent=0;
         root=realmax.*ones(weatherPermutationCount,1);
@@ -79,7 +87,7 @@ for c1=1:12:conductorCount
         delta1=zeros(weatherPermutationCount,1);
         prads=zeros(weatherPermutationCount,1);
         pcons=zeros(weatherPermutationCount,1);
-        %cs=(-1*realmax).*ones(weatherPermutationCount,1);
+        pir2s=zeros(weatherPermutationCount,1);
         cs2=zeros(weatherPermutationCount,1);
         
         cdata=conductorData(c,:);
@@ -90,10 +98,11 @@ for c1=1:12:conductorCount
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv);       
-            %initguess(counter)=GuessTc;
-            [roott,~,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
+            initguess(counter)=GuessTc;
+            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
             prads(counter)=Prad;
             pcons(counter)=Pcon;
+            pir2s(counter)=Pj;
             %disp(counter)
             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
@@ -150,8 +159,21 @@ for c1=1:12:conductorCount
 
             if(row>1)
                 cs2(counter)=max(searchRes(:,3));
-                if(cs2(counter)>1 && currents(counter)>convergeCurrent)
-                    convergeCurrent=currents(counter);
+                if(cs2(counter)>1 && currents(counter)>convergeCurrents(c,1) && psols(counter)==0)
+                    convergeCurrents(c,1)=currents(counter);
+                    convergeCurrents(c,2)=pir2s(counter);
+                end
+                if(root(counter)>ambtemps(counter)+1)
+                    [obj,gof]=fit(searchRes(:,1),searchRes(:,7),'poly1');
+                    coef=coeffvalues(obj);
+                    pconas(counter)=coef(1);
+                    pconbs(counter)=coef(2);
+                    pconrs(counter)=gof.rsquare;
+                    [obj,gof]=fit(searchRes(:,1),searchRes(:,10),'poly1');
+                    coef=coeffvalues(obj);
+                    pradas(counter)=coef(1);
+                    pradbs(counter)=coef(2);
+                    pradrs(counter)=gof.rsquare;
                 end
             end
         end
@@ -159,7 +181,7 @@ for c1=1:12:conductorCount
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
-        convergeCurrents(c)=convergeCurrent;
+        
         cinfo(:,c)=cs2;
 %         toc
     end
