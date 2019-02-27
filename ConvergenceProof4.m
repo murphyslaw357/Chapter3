@@ -52,17 +52,17 @@ pradrs=zeros(weatherPermutationCount,1);
 counter=0;
 psol=0;
 for imagnitude=0:(1.5/4)/spacer:1.5/4
-     for psol=0:maxpsol/spacer:maxpsol
+    for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
-             for Vw=0:10/spacer:10
+            for Vw=0:10/spacer:10
                 counter=counter+1;
-                psols(counter)=psol;
+                psols(counter)=psol*alphas;
                 winds(counter)=Vw;
                 ambtemps(counter)=ambtemp;
                 currents(counter)=imagnitude;
-             end
+            end
         end
-     end
+    end
 end
 
 convergeCurrents=zeros(conductorCount,1);
@@ -95,9 +95,9 @@ for c1=1:12:conductorCount
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
-            GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv,polymodel);       
+            GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
             %initguess(counter)=GuessTc;
-            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2,polymodel);
+            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2,polymodel);
             prads(counter)=Prad;
             pcons(counter)=Pcon;
             pir2s(counter)=Pj;
@@ -109,7 +109,7 @@ for c1=1:12:conductorCount
             [searchCount,~]=size(temps);
             tempSearch=zeros(searchCount,20);
             tempSearch(:,1)=temps;
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter)*diam*alphas,tempSearch(:,1),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
             
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             hprime=I2Rprime-PconPrime-PradPrime;

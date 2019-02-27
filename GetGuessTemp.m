@@ -1,10 +1,10 @@
-function [GuessTc] =GetGuessTemp(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,mdl)
+function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
     GuessTc=Ta;
 
     if(I>0)
         %GuessTc=coef(1)+coef(2).*Pj/(coef(3)+Vw)+coef(4)*Pj+coef(5)*Ta;
-    %     GuessTc=coef(1)+coef(2).*(Pj+coef(6).*Psol)./(coef(3)+Vw)+coef(4).*Pj+coef(5).*Ta;
-        GuessTc=mdl(I,Psol,Ta,Vw);
+        %GuessTc=coef(1)+coef(2).*(Pj+coef(6).*Psol)./(coef(3)+Vw)+coef(4).*Pj+coef(5).*Ta;
+        GuessTc=mdl(I,Psol*D,Ta,Vw);
     end
 % if(GuessTc<Ta+2)
 %     GuessTc=Ta+2;

@@ -142,7 +142,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
         disp(msg);
     end
     
-    Mismatch=I2R(i)+Psol-Prad(i)-Pcon(i);
+    Mismatch=I2R(i)+Psol*D-Prad(i)-Pcon(i);
     update=Mismatch/Hprime;
     GuessTc(i)=GuessTc(i)-update;  
     end

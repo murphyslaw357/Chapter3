@@ -10,7 +10,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;
-    [GuessTc]=GetGuessTemp(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,mdl);
+    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol*D,mdl);
     GuessTc2=GuessTc;
     Tolerance=0.001; %tolerance criteria for Newton's method
     update=realmax;
@@ -92,7 +92,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             error(msg);
         end
 
-        Mismatch=I2R+Psol-Prad-Pcon;
+        Mismatch=I2R+Psol*D-Prad-Pcon;
         update=Mismatch/Hprime;
         GuessTc=GuessTc-update;   
 
@@ -107,7 +107,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     if(isnan(GuessTc))
         msg='converge failed!';
         error(msg);
-    elseif(round(I2R,1)<0 || Psol <0 || round(GuessTc-Ta,1)<0)
+    elseif(round(I2R,1)<0 || round(GuessTc-Ta,1)<0)
        msg='error condition!';
        error(msg)
     end
