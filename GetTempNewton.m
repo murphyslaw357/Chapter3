@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,NudfPrimedgrpr,NudfPrimePrimedgrpr2)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,NudfPrimedgrpr,NudfPrimePrimedgrpr2,mdl)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -10,7 +10,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;
-    [GuessTc]=GetGuessTemp(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe);
+    [GuessTc]=GetGuessTemp(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,mdl);
     GuessTc2=GuessTc;
     Tolerance=0.001; %tolerance criteria for Newton's method
     update=realmax;
@@ -39,17 +39,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         Tfilmk=GuessTfilm+273;
         Gr=(g*(D^3).*abs(GuessTc-Ta))./(Tfilmk.*(vf.^2));  
         GrPrime=g*(D^3).*((Tfilmk.*(vf.^2)).*((GuessTc-Ta)./abs(GuessTc-Ta))-abs(GuessTc-Ta).*(TfilmkPrime*vf.^2+...
-            Tfilmk*2.*vf.*vfPrime))/((Tfilmk^2).*(vf^4));
-%         if(GuessTc>=Ta)
-%             
-%             GrPrime=(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
-%                 Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3));
-%         elseif(GuessTc<Ta)
-%               
-%             GrPrime=-1*(g*(D^3))*(Tfilmk*vf-(GuessTc-Ta)*(TfilmkPrime*vf+...
-%                 Tfilmk*2*vfPrime))/((Tfilmk^2)*(vf^3)); 
-%         end
-          
+        Tfilmk*2.*vf.*vfPrime))/((Tfilmk^2).*(vf^4));
+
         Lambdaf=(2.42e-2)+(7.2e-5)*GuessTfilm;
         LambdafPrime=3.6e-5;
         
@@ -57,12 +48,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         GrPr=Gr*Pr;
         %Natural convection
         Nudf=fGrPr(GrPr);
-%         NudfPrimedgrpr=differentiate(fGrPr,GrPr); 
-%         NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
-%coef=coeffvalues(fGrPr);
-    %NudfPrimedgrpr=cfit(fittype('b*a*x^(b-1)'),coef(1),coef(2));
-    
-    NudfPrimedtc=NudfPrimedgrpr(GrPr).*(Gr.*PrPrime+GrPrime.*Pr);
+        NudfPrimedtc=NudfPrimedgrpr(GrPr).*(Gr.*PrPrime+GrPrime.*Pr);
     
         %Mixed convection
         Re=(sin(phi)*Vw*D)./vf;  
@@ -90,11 +76,11 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf));
         elseif(GuessTc~=Ta && Vw ~=0)
-        %mixed convection
+            %mixed convection
             Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrimedtc*Lambdaf));
         elseif(GuessTc==Ta && Vw~=0)
-        %pure forced    
+            %pure forced    
             Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrimedtc*Lambdaf));
         end
