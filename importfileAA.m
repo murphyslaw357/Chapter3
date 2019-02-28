@@ -121,5 +121,5 @@ ConductorInfo.LowTemp = cell2mat(rawNumericColumns(:, 14));
 ConductorInfo.HighTemp = cell2mat(rawNumericColumns(:, 15));
 ConductorInfo.MetersperResistanceInterval = cell2mat(rawNumericColumns(:, 16));
 ConductorInfo.AllowableAmpacity = cell2mat(rawNumericColumns(:, 17));
-ConductorInfo.Type = categorical(rawStringColumns(:, 3));
+ConductorInfo.Type = rawStringColumns(:, 3);
 

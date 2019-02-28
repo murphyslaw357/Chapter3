@@ -1,14 +1,15 @@
 clear
 clc
 
-foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
-%foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+%foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
 %foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 
 load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
-load(strcat(foldersource,'model.mat'))
+load(strcat(foldersource,'ACSR.mat'))
+load(strcat(foldersource,'ACSS.mat'))
 
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
@@ -72,12 +73,20 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:conductorCount
+for c1=70:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
     for c=c1:c1+increment
+        cdata=conductorData(c,:);
+         if(strcmp(cdata.Type,'ACSR'))
+             polymodel=polymodel_ACSR;
+         elseif(strcmp(cdata.Type,'ACSS'))
+             polymodel=polymodel_ACSS;
+         else
+             continue;
+         end
         disp(c)
         convergeCurrent=0;
         root=realmax.*ones(weatherPermutationCount,1);
@@ -88,7 +97,6 @@ for c1=1:12:conductorCount
         pir2s=zeros(weatherPermutationCount,1);
         cs=zeros(weatherPermutationCount,1);
         
-        cdata=conductorData(c,:);
         maxcurrent=ceil(cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);

@@ -25,7 +25,5 @@ function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
 % mdl = fitnlm(x,root,modelfun,beta0)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IR2s=((currents.*maxcurrent).^2).*(alpha+25*beta);
-% x=[IR2s,winds,ambtemps,psols,currents.*maxcurrent];
-% modelfun=@(b,x) b(1)+b(2).*(x(:,1)+b(6).*x(:,4))./(b(3)+x(:,2))+b(4).*x(:,1)+b(5).*x(:,3);
-% beta0=[0.46 21.37 3.02 -0.9667 1.0864 1];
-% mdl = fitnlm(x,root,modelfun,beta0)
+% x=[IR2s,psols*diam,ambtemps,winds];
+% mdl=MultiPolyRegress(x,root,3);
