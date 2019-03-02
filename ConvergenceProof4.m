@@ -10,6 +10,7 @@ load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
 load(strcat(foldersource,'ACSR.mat'))
 load(strcat(foldersource,'ACSS.mat'))
+load(strcat(foldersource,'ACAR.mat'))
 
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
@@ -73,7 +74,7 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=70:12:conductorCount
+for c1=134:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
@@ -84,8 +85,11 @@ for c1=70:12:conductorCount
              polymodel=polymodel_ACSR;
          elseif(strcmp(cdata.Type,'ACSS'))
              polymodel=polymodel_ACSS;
+         elseif(strcmp(cdata.Type,'ACAR'))
+             polymodel=polymodel_ACAR;
          else
              continue;
+             %polymodel=polymodel_ACSS;
          end
         disp(c)
         convergeCurrent=0;

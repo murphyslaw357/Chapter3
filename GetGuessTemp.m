@@ -6,6 +6,9 @@ function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
         %GuessTc=coef(1)+coef(2).*(Pj+coef(6).*Psol)./(coef(3)+Vw)+coef(4).*Pj+coef(5).*Ta;
         GuessTc=mdl(I,Psol*D,Ta,Vw);
     end
+    if(GuessTc>200)
+        GuessTc=200;
+    end
 % if(GuessTc<Ta+2)
 %     GuessTc=Ta+2;
 % end
@@ -26,4 +29,5 @@ function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IR2s=((currents.*maxcurrent).^2).*(alpha+25*beta);
 % x=[IR2s,psols*diam,ambtemps,winds];
-% mdl=MultiPolyRegress(x,root,3);
+% mdl=MultiPolyRegress(x,root,3)
+% polymodel_ACAR=mdl.PolynomialExpression;
