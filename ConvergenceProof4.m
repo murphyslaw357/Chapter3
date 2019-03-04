@@ -1,9 +1,13 @@
 clear
 clc
 
-%foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
-foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
-%foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+if(ispc==1)
+    foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+elseif(ismac==1)
+    foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+elseif(isunix==1)
+    foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+end
 
 load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
@@ -14,10 +18,6 @@ load(strcat(foldersource,'ACAR.mat'))
 
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
-
-coef=coeffvalues(f);
-NudfPrimedgrpr=cfit(fittype('b*a*x^(b-1)'),coef(1),coef(2));
-NudfPrimePrimedgrpr2=cfit(fittype('(b-1)*b*a*x^(b-2)'),coef(1),coef(2));
 
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
@@ -74,7 +74,7 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=134:12:conductorCount
+for c1=60:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
@@ -108,8 +108,7 @@ for c1=134:12:conductorCount
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
-            %initguess(counter)=GuessTc;
-            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2,polymodel);
+            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
             prads(counter)=Prad;
             pcons(counter)=Pcon;
             pir2s(counter)=Pj;
@@ -119,9 +118,9 @@ for c1=134:12:conductorCount
             temps=(bottomend-10:searchIncrement:topend+10)';
              
             [searchCount,~]=size(temps);
-            tempSearch=zeros(searchCount,20);
+            tempSearch=zeros(searchCount,4);
             tempSearch(:,1)=temps;
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv,NudfPrimedgrpr,NudfPrimePrimedgrpr2);
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv);
             
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             hprime=I2Rprime-PconPrime-PradPrime;
@@ -129,19 +128,6 @@ for c1=134:12:conductorCount
             tempSearch(:,2)=Tc;
             tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
             tempSearch(:,4)=h;
-%             tempSearch(:,5)=hprime;
-%             tempSearch(:,6)=hprimeprime;
-%             tempSearch(:,7)=Pcon;
-%             tempSearch(:,8)=PconPrime;
-%             tempSearch(:,9)=PconPrimePrime;
-%             tempSearch(:,10)=Prad;
-%             tempSearch(:,11)=PradPrime;
-%             tempSearch(:,12)=PradPrimePrime;
-%             tempSearch(:,13)=I2R;
-%             tempSearch(:,14)=I2Rprime;
-%             tempSearch(:,15)=Gr;
-%             tempSearch(:,16)=GrPrime;
-%             tempSearch(:,17)=Nudf;
             rerun=1;
             reruncounter=0;
 
@@ -172,18 +158,6 @@ for c1=134:12:conductorCount
                     convergeCurrents(c,1)=currents(counter);
                     disp(currents(counter))
                 end
-%                 if(root(counter)>ambtemps(counter)+1)
-%                     [obj,gof]=fit(searchRes(:,1),searchRes(:,7),'poly1');
-%                     coef=coeffvalues(obj);
-%                     pconas(counter)=coef(1);
-%                     pconbs(counter)=coef(2);
-%                     pconrs(counter)=gof.rsquare;
-%                     [obj,gof]=fit(searchRes(:,1),searchRes(:,10),'poly1');
-%                     coef=coeffvalues(obj);
-%                     pradas(counter)=coef(1);
-%                     pradbs(counter)=coef(2);
-%                     pradrs(counter)=gof.rsquare;
-%                 end
             end
         end
         

@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe,NudfPrimedgrpr,NudfPrimePrimedgrpr2)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,GuessTc,fGrPr,fReNu,fNuRe)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -80,11 +80,12 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
     
     %Natural convection
     Nudf=fGrPr(GrPr);
-    %[NudfPrimedgrpr,NudfPrimePrimedgrpr2]=differentiate(fGrPr,GrPr); 
+    %%
+    [NudfPrimedgrpr,NudfPrimePrimedgrpr2]=differentiate(fGrPr,GrPr); 
 
-    NudfPrimedtc=NudfPrimedgrpr(GrPr).*(Gr.*PrPrime+GrPrime.*Pr);
-    NudfPrimePrimedtc2=NudfPrimePrimedgrpr2(GrPr).*(Gr.*PrPrime+GrPrime.*Pr)+...
-        NudfPrimedgrpr(GrPr).*(GrPrime.*PrPrime+GrPrimePrime.*Pr+GrPrime.*PrPrime);
+    NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
+    NudfPrimePrimedtc2=NudfPrimePrimedgrpr2.*(Gr.*PrPrime+GrPrime.*Pr)+...
+        NudfPrimedgrpr.*(GrPrime.*PrPrime+GrPrimePrime.*Pr+GrPrime.*PrPrime);
 
     %Mixed convection
     Re=(sin(phi)*Vw*D)./vf;  
@@ -138,7 +139,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,Pcon
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%MISMATCH AND UPDATE%%%%%%%%%%%%%%
     Hprime=I2Rprime-PradPrime(i)-PconPrime(i);
     if(Hprime>0 || isnan(PconPrime(i)))
-        msg='error condition';
+        msg='error condition1';
         disp(msg);
     end
     

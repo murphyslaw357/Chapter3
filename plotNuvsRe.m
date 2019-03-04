@@ -26,11 +26,11 @@ fgrpr6=0.125.*grprx6.^0.333;
 grprx=[grprx1(1:end-1) grprx2(1:end-1) grprx3(1:end-1) grprx4(1:end-1) grprx5(1:end-1) grprx6];
 fgrpr=[fgrpr1(1:end-1) fgrpr2(1:end-1) fgrpr3(1:end-1) fgrpr4(1:end-1) fgrpr5(1:end-1) fgrpr6];
 
-
-% [f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
+%[f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
+[f,gof,out] = fit(grprx',fgrpr','a*x^b','startpoint',[1/4,1/3]);
 % 
 % % df = differentiate(f,grprx');
-% save('GrPrSpline.mat')
+save('GrPrSpline.mat','f')
 % 
 % % fgrpr2=0.6+0.387.*((grprx./(1+((0.559)))).^(1/6))
 clear
@@ -61,8 +61,6 @@ x5=(lim5:(lim6-lim5)/1000:lim6);
 x6=(lim6:(lim7-lim6)/10000:lim7);
 x7=(lim7:(lim8-lim7)/100000:lim8);
 
-
-
 f1=0.437.*x1.^0.0895;
 f2=0.565.*x2.^0.136;
 f3=0.800.*x3.^0.280;
@@ -73,22 +71,15 @@ f7=0.0208.*x7.^0.814;
 
 x=[x1 x2 x3 x4 x5 x6 x7];
 f=[f1 f2 f3 f4 f5 f6 f7];
-ff = fit(x',f','smoothingspline','SmoothingParam',1)
-ffinv = fit(f',x','smoothingspline','SmoothingParam',1);
-
-% %IEEE 738
-% g1=1.01+1.35.*x.^0.52;
-% g2=0.754.*x.^0.6;
-% [~,col]=size(g1);
-% g=zeros(1,col);
-% for i=1:col
-%     g(i)=max(g1(i),g2(i));
-% end
-% loglog(x,g)
-% hold on
-loglog(x,f);
-
-xlabel('Reynolds Number - Re')
-ylabel('Nusselt Number - Nu')
-legend('[1]','[3]')
+% [ff,gof,out] = fit(x',f','smoothingspline','SmoothingParam',1)
+[ff,gof,out] = fit(x',f','a*x^b','startpoint',[1/4,1/3]);
+% [ffinv,gof,out] = fit(f',x','smoothingspline','SmoothingParam',1);
+[ffinv,gof,out] = fit(f',x','a*x^b','startpoint',[1/4,1/3]);
+save('ReNuSpline.mat','ff')
+save('NuReSpline.mat','ffinv')
+% loglog(x,f);
+% 
+% xlabel('Reynolds Number - Re')
+% ylabel('Nusselt Number - Nu')
+% legend('[1]','[3]')
 
