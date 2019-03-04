@@ -28,21 +28,11 @@ fgrpr=[fgrpr1(1:end-1) fgrpr2(1:end-1) fgrpr3(1:end-1) fgrpr4(1:end-1) fgrpr5(1:
 
 %[f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
 [f,gof,out] = fit(grprx',fgrpr','a*x^b','startpoint',[1/4,1/3]);
-% 
-% % df = differentiate(f,grprx');
+
 save('GrPrSpline.mat','f')
-% 
-% % fgrpr2=0.6+0.387.*((grprx./(1+((0.559)))).^(1/6))
+
 clear
 clc
-% lim1=1e-4;
-% lim2=4e-3;
-% lim3=9e-2;
-% lim4=1;
-% lim5=35;
-% lim6=5e3;
-% lim7=5e4;
-% lim8=2e5;
 
 lim1=0;
 lim2=(0.565/0.437)^(1/(0.0895-0.136));
@@ -77,9 +67,9 @@ f=[f1 f2 f3 f4 f5 f6 f7];
 [ffinv,gof,out] = fit(f',x','a*x^b','startpoint',[1/4,1/3]);
 save('ReNuSpline.mat','ff')
 save('NuReSpline.mat','ffinv')
-% loglog(x,f);
-% 
-% xlabel('Reynolds Number - Re')
-% ylabel('Nusselt Number - Nu')
-% legend('[1]','[3]')
 
+loglog(x,f);
+
+xlabel('Reynolds Number - Re')
+ylabel('Nusselt Number - Nu')
+legend('[1]','[3]')
