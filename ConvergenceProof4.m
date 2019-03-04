@@ -1,5 +1,6 @@
 clear
 clc
+close all
 
 if(ispc==1)
     foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
@@ -15,6 +16,7 @@ load(strcat(foldersource,'NuReSpline.mat'))
 load(strcat(foldersource,'ACSR.mat'))
 load(strcat(foldersource,'ACSS.mat'))
 load(strcat(foldersource,'ACAR.mat'))
+load(strcat(foldersource,'AAAC.mat'))
 
 conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorData);
@@ -74,7 +76,7 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=60:12:conductorCount
+for c1=162:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
@@ -87,6 +89,8 @@ for c1=60:12:conductorCount
              polymodel=polymodel_ACSS;
          elseif(strcmp(cdata.Type,'ACAR'))
              polymodel=polymodel_ACAR;
+         elseif(strcmp(cdata.Type,'AAAC'))
+             polymodel=polymodel_AAAC;
          else
              continue;
              %polymodel=polymodel_ACSS;
