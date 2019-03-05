@@ -52,10 +52,13 @@ pconrs=zeros(weatherPermutationCount,1);
 pradas=zeros(weatherPermutationCount,1);
 pradbs=zeros(weatherPermutationCount,1);
 pradrs=zeros(weatherPermutationCount,1);
+%polymodels=cell(conductorCount,1);
+polymodels=importfileAB(strcat(foldersource,'polymodels.csv'));
+[polymodelrow,~]=size(polymodels);
 
 counter=0;
 psol=0;
-for imagnitude=0:(1.5/4)/spacer:1.5/4
+for imagnitude=0.05:(1.5)/spacer:1.55
     for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
             for Vw=0:10/spacer:10
@@ -76,14 +79,16 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=162:12:conductorCount
+for c1=1:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
     for c=c1:c1+increment
         cdata=conductorData(c,:);
-         if(strcmp(cdata.Type,'ACSR'))
+         if(c<polymodelrow)
+             polymodel=str2func(polymodels(c));
+         elseif(strcmp(cdata.Type,'ACSR'))
              polymodel=polymodel_ACSR;
          elseif(strcmp(cdata.Type,'ACSS'))
              polymodel=polymodel_ACSS;
@@ -164,6 +169,10 @@ for c1=162:12:conductorCount
                 end
             end
         end
+        IR2s=(((currents.*maxcurrent).^2)).*(alpha+25*beta);
+        x=[IR2s,psols.*diam,ambtemps,winds];
+        mdl=MultiPolyRegress(x,root,3);
+        polymodels{c}=func2str(mdl.PolynomialExpression);
         
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
@@ -171,6 +180,7 @@ for c1=162:12:conductorCount
         cinfo(:,c)=cs;
     end
     
+    writetable(cell2table(polymodels),strcat(foldersource,'polymodels.csv'));
     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
