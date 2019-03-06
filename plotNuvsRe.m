@@ -64,12 +64,12 @@ f=[f1 f2 f3 f4 f5 f6 f7];
 % [ff,gof,out] = fit(x',f','smoothingspline','SmoothingParam',1)
 [ff,gof,out] = fit(x',f','a*x^b','startpoint',[1/4,1/3]);
 % [ffinv,gof,out] = fit(f',x','smoothingspline','SmoothingParam',1);
-[ffinv,gof,out] = fit(f',x','a*x^b','startpoint',[1/4,1/3]);
+[ffinv,gof,out] = fit(f',x','(x/a)^(1/b)','startpoint',[1/4,1/3]);
 save('ReNuSpline.mat','ff')
 save('NuReSpline.mat','ffinv')
 
 loglog(x,f);
 
-xlabel('Reynolds Number - Re')
-ylabel('Nusselt Number - Nu')
-legend('[1]','[3]')
+% xlabel('Reynolds Number - Re')
+% ylabel('Nusselt Number - Nu')
+% legend('[1]','[3]')

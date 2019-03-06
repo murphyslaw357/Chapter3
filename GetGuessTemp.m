@@ -1,17 +1,26 @@
 function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
     GuessTc=Ta;
-
+    Pj=((I^2)*(alpha+beta*25));
     if(I>0)
         %GuessTc=coef(1)+coef(2).*Pj/(coef(3)+Vw)+coef(4)*Pj+coef(5)*Ta;
         %GuessTc=coef(1)+coef(2).*(Pj+coef(6).*Psol)./(coef(3)+Vw)+coef(4).*Pj+coef(5).*Ta;
-        GuessTc=mdl(I,Psol*D,Ta,Vw);
+%         GuessTc=mdl(((I^2)).*alpha,((I^2)).*beta,Psol.*D,Ta,Vw);
+        GuessTc=mdl(((I.^2)).*alpha,((I.^2)).*beta,Psol.*D,Ta,1./(Vw+1));  %,(1./(Vw+1)).^2
+%         GuessTc=mdl(Pj,Psol.*D,Ta,Vw);
+%         a=0.43012;
+%         b=21.496;
+%         c=3.0337;
+%         d=-0.97255;
+%         e=1.087;
+%         GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
+
     end
 % if(GuessTc<Ta+2)
 %     GuessTc=Ta+2;
 % end
-if(GuessTc>300)
-    GuessTc=300;
-end
+% if(GuessTc>200)
+%     GuessTc=200;
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % x=[winds,ambtemps,currents.*maxcurrent,psols.*diam.*alphas];
 % pconfun=@(b,x) b(1).*x(:,1);

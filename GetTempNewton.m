@@ -10,7 +10,8 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;
-    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol*D,mdl);
+
+    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl);
     GuessTc2=GuessTc;
     Tolerance=0.001; %tolerance criteria for Newton's method
     update=realmax;
