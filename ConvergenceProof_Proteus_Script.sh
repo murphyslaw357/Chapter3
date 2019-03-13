@@ -5,7 +5,7 @@
 #$ -j y
 #$ -cwd
 #$ -P nieburPrj
-#$ -pe fixed16 16
+#$ -pe fixed64 64
 #$ -l h_rt=14:00:00
 #$ -l h_vmem=6G
 #$ -l matlab=1

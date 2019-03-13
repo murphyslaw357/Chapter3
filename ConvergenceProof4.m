@@ -13,19 +13,15 @@ end
 load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
-load(strcat(foldersource,'ACSR.mat'))
-load(strcat(foldersource,'ACSS.mat'))
-load(strcat(foldersource,'ACAR.mat'))
-load(strcat(foldersource,'AAAC.mat'))
 
-conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
+conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
 [conductorCount,~]=size(conductorData);
 
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
 conductorData.simulated=zeros(conductorCount,1);
-
+conductorData.convergeCurrent=zeros(conductorCount,1);
 Tref=25;
 epsilons=0.9;
 H=0;
@@ -52,12 +48,12 @@ pconrs=zeros(weatherPermutationCount,1);
 pradas=zeros(weatherPermutationCount,1);
 pradbs=zeros(weatherPermutationCount,1);
 pradrs=zeros(weatherPermutationCount,1);
-%polymodels=cell(conductorCount,1);
-polymodels=importfileAB(strcat(foldersource,'polymodels.csv'));
-[polymodelrow,~]=size(polymodels);
-bestpoly=zeros(polymodelrow,1);
+
+% polymodels=importfileAB(strcat(foldersource,'polymodels.csv'));
+% [polymodelrow,~]=size(polymodels);
+bestpoly=zeros(conductorCount,1);
 counter=0;
-psol=0;
+
 for imagnitude=0.05:(1.5)/spacer:1.55
     for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
@@ -79,30 +75,17 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:conductorCount
+for c1=1:12:weatherPermutationCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end
-    for c=c1:c1+increment
-        cdata=conductorData(c,:);
-        if(c<polymodelrow)
-              polymodel=str2func(polymodels.polymodels(c));
-        elseif(strcmp(cdata.Type,'ACSR'))
-             %polymodel=str2func(polymodels.polymodels(1));
-             polymodel=polymodel_ACSR;
-         elseif(strcmp(cdata.Type,'ACSS'))
-             polymodel=polymodel_ACSS;
-         elseif(strcmp(cdata.Type,'ACAR'))
-             polymodel=polymodel_ACAR;
-         elseif(strcmp(cdata.Type,'AAAC'))
-             polymodel=polymodel_AAAC;
-         else
-             continue;
-             %polymodel=polymodel_ACSS;
-         end
-%          if(c)
+    parfor c=c1:c1+increment
         disp(c)
+        if (conductorData(c,:).polymodels=="")
+            continue;
+        end
+        cdata=conductorData(c,:);  
         convergeCurrent=0;
         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
@@ -118,21 +101,23 @@ for c1=1:12:conductorCount
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for counter=1:weatherPermutationCount
+
+            polymodel=str2func(conductorData(c,:).polymodels);
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
             [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
-             prads(counter)=Prad;
-             pcons(counter)=Pcon;
-             pir2s(counter)=Pj;
-%              disp(counter)
-             root(counter,1)=roott;           
-             topend=max(roott,GuessTc);
-             bottomend=min(roott,GuessTc);
-             temps=(bottomend-10:searchIncrement:topend+10)';
+            prads(counter)=Prad;
+            pcons(counter)=Pcon;
+            pir2s(counter)=Pj;
+
+            root(counter,1)=roott;           
+            topend=max(roott,GuessTc);
+            bottomend=min(roott,GuessTc);
+            temps=(bottomend-10:searchIncrement:topend+10)';
               
-             [searchCount,~]=size(temps);
-             tempSearch=zeros(searchCount,4);
-             tempSearch(:,1)=temps;
-             [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv);
+            [searchCount,~]=size(temps);
+            tempSearch=zeros(searchCount,4);
+            tempSearch(:,1)=temps;
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv);
              
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             hprime=I2Rprime-PconPrime-PradPrime;
@@ -172,29 +157,22 @@ for c1=1:12:conductorCount
                 end
             end
         end
-%         IR2s=(((currents.*maxcurrent).^2)).*(alpha+25*beta);
-%         x=[IR2s,psols.*diam,ambtemps,winds];
-%         err=realmax;
-%         for i=1:8
-%             mdl=MultiPolyRegress(x,root,i);
-%             if(mdl.CVMAE<err)
-%                 err=mdl.CVMAE;
-%                 bestpoly(c)=i;
-%                 polymodels(c,:).polymodels=func2str(mdl.PolynomialExpression);
-%             end
-%         end
+
+        conductorData(c,:).simulated=1;
+        conductorData(c,:).convergeCurrent=convergeCurrents(c,1);
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
         cinfo(:,c)=cs;
     end
     
-    writetable(polymodels,strcat(foldersource,'polymodels.csv'));
     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
     csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);
+    writetable(conductorData,strcat(foldersource,'conductorData.csv'));
+    
 end
 
 csvwrite(strcat(foldersource,'psols.csv'),psols);
