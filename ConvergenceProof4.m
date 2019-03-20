@@ -75,8 +75,8 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:weatherPermutationCount
-    increment=11;
+for c1=1:18:weatherPermutationCount
+    increment=17;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
     end

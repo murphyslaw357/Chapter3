@@ -75,7 +75,7 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:conductorCount
+for c1=69:12:conductorCount
     increment=11;
     if(c1+11>conductorCount)
         increment=conductorCount-c1;
@@ -83,10 +83,10 @@ for c1=1:12:conductorCount
     for c=c1:c1+increment
         disp(c)
 %         if(c<=polymodelrow) 
-             if(~(conductorData(c,:).polymodels==""))
+%              if(~(conductorData(c,:).polymodels==""))
 %                 conductorData.polymodels(c)=polymodels.polymodels(c);
-                 continue;
-             end
+%                  continue;
+%              end
 %         end
         cdata=conductorData(c,:);
         
@@ -113,7 +113,7 @@ for c1=1:12:conductorCount
         IR2s=(((currents.*maxcurrent).^2)).*(alpha+25*beta);
         x=[(((currents.*maxcurrent).^2)).*alpha,(((currents.*maxcurrent).^2)).*beta,psols.*diam,ambtemps,1./(winds+1),(1./(winds+1)).^2];
         err=realmax;
-        for i=5:7
+        for i=1:15
             mdl=MultiPolyRegress(x,root,i);
             if(mdl.CVMAE<err)
                 err=mdl.CVMAE;
