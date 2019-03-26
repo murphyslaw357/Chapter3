@@ -1,14 +1,16 @@
 function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
     GuessTc=Ta;
+    sigmab=5.6697e-8;
     if(I>0)
         if(isempty(mdl))
-            Pj=(I.^2).*(alpha+25*beta);
-            a=0.43012;
-            b=21.496;
-            c=3.0337;
-            d=-0.97255;
-            e=1.087;
-            GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
+             Pj=(I.^2).*(alpha+25*beta);
+%             a=0.43012;
+%             b=21.496;
+%             c=3.0337;
+%             d=-0.97255;
+%             e=1.087;
+%             GuessTc=a+b*Pj/(c+Vw)+d*Pj+e*Ta;
+            GuessTc=(((Psol*D+Pj)/(pi*D*sigmab*epsilons)+((Ta+273)^4))^(1/4))-273;
         else
             %GuessTc=coef(1)+coef(2).*Pj/(coef(3)+Vw)+coef(4)*Pj+coef(5)*Ta;
             %GuessTc=coef(1)+coef(2).*(Pj+coef(6).*Psol)./(coef(3)+Vw)+coef(4).*Pj+coef(5).*Ta;
