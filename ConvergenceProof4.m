@@ -3,11 +3,11 @@ clc
 close all
 
 if(ispc==1)
-    foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+    foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
 elseif(ismac==1)
-    foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+    foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
-    foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+    foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
 load(strcat(foldersource,'GrPrSpline.mat'))
