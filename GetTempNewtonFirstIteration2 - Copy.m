@@ -121,17 +121,17 @@ function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrim
     PconPrime=zeros(row,1);
     PconPrimePrime=zeros(row,1);
     for i=1:row
-        if(Vw==0)
+        if(round(GuessTc(i),4)~=round(Ta,4) && Vw==0)
             %pure natural convection         
             Pcon(i)=pi*Nudf(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nudf(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i)));
             PconPrimePrime(i)=pi*(Nudf(i)*LambdafPrime+NudfPrimedtc(i)*Lambdaf(i)+(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i))+(GuessTc(i)-Ta)*(LambdafPrime*NudfPrimedtc(i)+NudfPrimePrimedtc2(i)*Lambdaf(i)+NudfPrimedtc(i)*LambdafPrime));
-        elseif(round(GuessTc(i),4)~=round(Ta,4))
+        elseif(round(GuessTc(i),4)~=round(Ta,4) && Vw ~=0)
         %mixed convection
             Pcon(i)=pi*Nueff(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nueff(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nueff(i)+NueffPrimedtc(i)*Lambdaf(i)));
             PconPrimePrime(i)=pi*(Nueff(i)*LambdafPrime+NueffPrimedtc(i)*Lambdaf(i)+LambdafPrime*Nueff(i)+NueffPrimedtc(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*NueffPrimedtc(i)+NueffPrimePrimedtc2(i)*Lambdaf(i)+NueffPrimedtc(i)*LambdafPrime));
-        else
+        elseif(GuessTc(i)==Ta && Vw~=0)
         %pure forced    
             Pcon(i)=pi*Nu(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nu(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nu(i)+NuPrimedtc(i)*Lambdaf(i)));

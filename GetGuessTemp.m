@@ -18,9 +18,10 @@ function [GuessTc] =GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl)
             %GuessTc=mdl((I^2)*(alpha+25*beta),Psol*D,Ta,Vw)+Ta;
         end
     end
-% if(GuessTc<Ta+2)
-%     GuessTc=Ta+2;
-% end
+    
+if(GuessTc<Ta)
+    GuessTc=Ta;
+end
 % if(GuessTc>200)
 %     GuessTc=200;
 % end

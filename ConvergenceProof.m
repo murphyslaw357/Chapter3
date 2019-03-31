@@ -1,182 +1,202 @@
 clear
 clc
+close all
 
-foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
-%foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
-%foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+% % myCluster = parcluster('local');
+% % numWorkers = myCluster.NumWorkers;
+% %numWorkers=4;
+ numWorkers=feature('numcores')
+% parpool('local',numWorkers)
 
-conductorData=importfileAA(strcat(foldersource,'ConductorInfo.csv'));
+if(ispc==1)
+    foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
+elseif(ismac==1)
+    foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
+elseif(isunix==1)
+    foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+end
+
+load(strcat(foldersource,'GrPrSpline.mat'))
+load(strcat(foldersource,'ReNuSpline.mat'))
+load(strcat(foldersource,'NuReSpline.mat'))
+
+conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
 [conductorCount,~]=size(conductorData);
 
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
 conductorData.simulated=zeros(conductorCount,1);
-
+conductorData.convergeCurrent=zeros(conductorCount,1);
+conductorData.lowestRise=zeros(conductorCount,1);
 Tref=25;
 epsilons=0.9;
 H=0;
 phi=90*pi/180;
 sigmab=5.6697e-8;
+maxpsol=1050;
 alphas=0.9;
-a=-33:65;
-[~,a3]=size(a);
-spacer=10;
-searchIncrement=0.01;
+spacer=15;
+searchIncrement=0.001;
+weatherPermutationCount=(spacer+1)^4;
 
-weatherPermutationCount=a3*(spacer+1)^3;
+psols=zeros(weatherPermutationCount,1);
+winds=zeros(weatherPermutationCount,1);
+ambtemps=zeros(weatherPermutationCount,1);
+currents=zeros(weatherPermutationCount,1);
+hs=zeros(weatherPermutationCount,1);
+hprimes=zeros(weatherPermutationCount,1);
+pconprimeprimes=zeros(weatherPermutationCount,1);
+pradprimeprimes=zeros(weatherPermutationCount,1);
+initguess=zeros(weatherPermutationCount,1);
+pconas=zeros(weatherPermutationCount,1);
+pconbs=zeros(weatherPermutationCount,1);
+pconrs=zeros(weatherPermutationCount,1);
+pradas=zeros(weatherPermutationCount,1);
+pradbs=zeros(weatherPermutationCount,1);
+pradrs=zeros(weatherPermutationCount,1);
+
+% polymodels=importfileAB(strcat(foldersource,'polymodels.csv'));
+% [polymodelrow,~]=size(polymodels);
+bestpoly=zeros(conductorCount,1);
+counter=0;
+
+for imagnitude=0.01:(0.2)/spacer:0.21
+    for psol=0:maxpsol/spacer:maxpsol
+        for ambtemp=-33:98/spacer:65
+            for Vw=0:10/spacer:10
+                counter=counter+1;
+                psols(counter)=psol*alphas;
+                winds(counter)=Vw;
+                ambtemps(counter)=ambtemp;
+                currents(counter)=imagnitude;
+            end
+        end
+    end
+end
+
+convergeCurrents=zeros(conductorCount,1);
+lowestRise=zeros(conductorCount,1);
 deltainfo=zeros(weatherPermutationCount,conductorCount);
 delta1info=zeros(weatherPermutationCount,conductorCount);
-psolinfo=zeros(weatherPermutationCount,conductorCount);
-windinfo=zeros(weatherPermutationCount,conductorCount);
-ambtempinfo=zeros(weatherPermutationCount,conductorCount);
-currentinfo=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
-cinfo=(-1*realmax).*ones(weatherPermutationCount,conductorCount);
+cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:12:conductorCount
-    for c=3:c1+11
+for c1=1:numWorkers:weatherPermutationCount
+    increment=numWorkers-1;
+    if(c1+increment>conductorCount)
+        increment=conductorCount-c1;
+    end
+    for c=c1:c1+increment
+        disp(c)
+        if (conductorData(c,:).polymodels=="")
+            continue;
+        end
+        cdata=conductorData(c,:);  
+        convergeCurrent=0;
         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
-        psols=zeros(weatherPermutationCount,1);
-        winds=zeros(weatherPermutationCount,1);
-        ambtemps=zeros(weatherPermutationCount,1);
-        currents=zeros(weatherPermutationCount,1);
-        cs=(-1*realmax).*ones(weatherPermutationCount,1);
-        steps=zeros(weatherPermutationCount,1);
+        prads=zeros(weatherPermutationCount,1);
+        pcons=zeros(weatherPermutationCount,1);
+        pir2s=zeros(weatherPermutationCount,1);
+        cs=zeros(weatherPermutationCount,1);
         
-        cdata=conductorData(c,:);
-        maxcurrent=ceil(1.5*cdata.AllowableAmpacity);
+        maxcurrent=ceil(cdata.AllowableAmpacity);
         diam=cdata.DiamCompleteCable*0.0254;
-        maxpsol=1050*diam*alphas;
-
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
-        alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;    
-        counter=0;
-        
-        for psol=0:maxpsol/spacer:maxpsol
-            disp(psol)
-            for imagnitude=0:maxcurrent/spacer:maxcurrent
-                IIstar=abs(imagnitude)^2; 
-                for ambtemp=-33:98/spacer:65
-                    %GuessTc2=((psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons)+((ambtemp+273)^4))^(1/4)-273; 
-                    %GuessTc=(psol+IIstar*(alpha+25*beta))/(pi*diam*sigmab*epsilons*((1.38e8)+ambtemp*(1.39e6))+pi*(2.42e-2)*0.645)+ambtemp;
-                    for Vw=0:10/spacer:10
-                        GuessTc=GetGuessTemp(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol);
-                        counter=counter+1
-                        psols(counter)=psol;
-                        winds(counter)=Vw;
-                        ambtemps(counter)=ambtemp;
-                        currents(counter)=imagnitude;
-                        [roott,~,~,~,~,~,~] =GetTempNewton(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol);
-                        root(counter,1)=roott;
+        alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        polymodel=str2func(conductorData(c,:).polymodels);
+        for counter=1:weatherPermutationCount
+            if(currents(counter)<=convergeCurrents(c,1))
+                continue;
+            end
+            
+            GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
+            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
+            prads(counter)=Prad;
+            pcons(counter)=Pcon;
+            pir2s(counter)=Pj;
+
+            root(counter,1)=roott;           
+            topend=max(roott,GuessTc);
+            bottomend=min(roott,GuessTc);
+            temps=(bottomend-10:searchIncrement:topend+10)';
+              
+            [searchCount,~]=size(temps);
+            tempSearch=zeros(searchCount,3);
+            tempSearch(:,1)=temps;
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] =GetTempNewtonFirstIteration2(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),tempSearch(:,1),f,ff,ffinv);
+             
+            h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
+            hprime=I2Rprime-PconPrime-PradPrime;
+            hprimeprime=-1*PconPrimePrime-PradPrimePrime;
+            tempSearch(:,2)=Tc;
+            tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
+%             tempSearch(:,4)=h;
+%             tempSearch(:,5)=hprime;
+%             tempSearch(:,6)=hprimeprime;
+%             tempSearch(:,7)=I2R;
+%             tempSearch(:,8)=Pcon;
+%             tempSearch(:,9)=Prad;
+            rerun=1;
+            reruncounter=0;
+
+            while(rerun)
+                rerun=0;
+                reruncounter=reruncounter+1;
+                if(reruncounter>5000)
+                    msg='error condition!';
+                    error(msg)
+                end
+                searchRes=tempSearch(tempSearch(:,1)>=bottomend-delta(counter,1)& tempSearch(:,1)<=topend+delta1(counter,1),:);
+                [row,col]=size(searchRes);
+                if(row>1)
+                    if(max(searchRes(:,2))>topend+delta1(counter,1))
+                        delta1(counter,1)=0.05+max(searchRes(:,2))-topend;
                         rerun=1;
-                        reruncounter=0;
-                        topend=max(roott,GuessTc);
-                        bottomend=min(roott,GuessTc);
-                        tempSearch=(bottomend-10:searchIncrement:topend+10)';
-                       
-                        [searchCount,~]=size(tempSearch);
-                        tempSearch=[tempSearch,zeros(searchCount,6)];
-                        for i=1:searchCount
-                            [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime,A,m,C,n] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,tempSearch(i,1));
-                            tempSearch(i,2)=Tc;
-                            tempSearch(i,3)=A;
-                            tempSearch(i,4)=m;
-                            tempSearch(i,5)=C;
-                            tempSearch(i,6)=n;
-                        end
-                        while(rerun)
-                            rerun=0;
-                            reruncounter=reruncounter+1;
-                            if(reruncounter>5000)
-                                msg='error condition!';
-                                error(msg)
-                            end
-                            
-                            searchRes=tempSearch(tempSearch(:,1)>bottomend-delta(counter,1)& tempSearch(:,1)<topend+delta1(counter,1),:);
-                            if(max(searchRes(:,2))>topend+delta1(counter,1))
-                                delta1(counter,1)=max(searchRes(:,2))-topend;
-                                rerun=1;
-                            end
-                            if(min(searchRes(:,2))<bottomend-delta(counter,1))
-                                delta(counter,1)=bottomend-min(searchRes(:,2));
-                                rerun=1;
-                            end
-%                             for Tcc=root(counter,1)-delta(counter,1):0.1:GuessTc+delta1(counter,1)
-%                                 [Tc,I2R,I2Rprime,Prad,Pradprime,Pcon,Pconprime] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
-%                                 if(Tc<root(counter,1)-delta(counter,1))
-%                                     delta(counter,1)=root(counter,1)-Tc;
-%                                     rerun=1;
-%                                 elseif(Tc>GuessTc+delta1(counter,1))
-%                                     delta1(counter,1)=Tc-GuessTc;
-%                                     rerun=1;
-%                                 end
-%                                 if(rerun) 
-%                                     break 
-%                                 end
-%                             end
-                        end
-                        [searchResCount,~]=size(searchRes);
-                        if(counter==1090)
-                        end
-                        if(searchResCount>1)
-                            if (all(searchRes(:,3) == searchRes(1,3)) && all(searchRes(:,4) == searchRes(1,4)) && all(searchRes(:,5) == searchRes(1,5)) && all(searchRes(:,6) == searchRes(1,6)))
-                                steps(counter)=-1;
-                            else
-                                steps(counter)=1;
-                            end
-                            ctemp=-1*realmax*ones(searchResCount,searchResCount);
-                            for i=1:searchResCount-1
-                                for j=i+1:searchResCount
-                                    %disp(strcat(num2str(i),',',num2str(j)));
-                                    ctemp(i,j)=abs(searchRes(i,2)-searchRes(j,2))/abs(searchRes(i,1)-searchRes(j,1));
-%                                     if(C>cs(counter))
-%                                         cs(counter)=C;
-%                                         if(C>1)
-%                                         end
-%                                     end
-                                end
-                            end
-                            cs(counter)=max(max(ctemp));
-                         end
-%                         for Tcc=roott-delta(counter,1):0.1:GuessTc+delta1(counter,1)-0.1                                                              
-%                             [Tc,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc);
-%                             for Tcc1=Tcc+0.1:0.1:GuessTc+delta1(counter,1)
-%                                 [Tc1,~,~,~,~,~,~] =GetTempNewtonFirstIteration(imagnitude,ambtemp,H,diam,phi,Vw,alpha,beta,epsilons,psol,Tcc1);
-%                                 C=abs(Tc-Tc1)/abs(Tcc-Tcc1);
-%                                 if(C>1)
-%                                     exceptions=[exceptions;c,imagnitude,ambtemp,Vw,psol,roott,GuessTc,GuessTc2,delta(counter,1),delta1(counter,1),Tcc,Tcc1];
-%                                 end
-%                             end
-%                         end
+                    end
+                    if(min(searchRes(:,2))<bottomend-delta(counter,1))
+                        delta(counter,1)=0.05+bottomend-min(searchRes(:,2));
+                        rerun=1;
                     end
                 end
             end
+
+            if(row>1)
+                cs(counter)=max(searchRes(:,3));
+                if(cs(counter)>1 && currents(counter)>convergeCurrents(c,1))
+                    convergeCurrents(c,1)=currents(counter);
+                    disp(currents(counter))
+                end
+                if(cs(counter)>1 && (roott-ambtemps(counter))>lowestRise(c))
+                    lowestRise(c)=(roott-ambtemps(counter));
+                    disp((roott-ambtemps(counter)))
+                end
+            end
         end
-        %end
-        %disp(strcat(num2str(delta(c)),',',num2str(delta1(c)),',',num2str(100*c/conductorCount),',',cellstr(cdata.CodeWord)));
+
+        conductorData(c,:).simulated=1;
+        conductorData(c,:).convergeCurrent=convergeCurrents(c,1);
+        conductorData(c,:).lowestRise=lowestRise(c);
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
-        psolinfo(:,c)=psols;
-        windinfo(:,c)=winds;
-        ambtempinfo(:,c)=ambtemps;
-        currentinfo(:,c)=currents;
         cinfo(:,c)=cs;
-        stepinfo(:,c)=steps;
     end
-    csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
-    csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
-    csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
-    csvwrite(strcat(foldersource,'psolinfo.csv'),psolinfo);
-    csvwrite(strcat(foldersource,'windinfo.csv'),windinfo);
-    csvwrite(strcat(foldersource,'ambtempinfo.csv'),ambtempinfo);
-    csvwrite(strcat(foldersource,'currentinfo.csv'),currentinfo);
-    csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
-    csvwrite(strcat(foldersource,'stepinfo.csv'),stepinfo);
-    
-    writetable(conductorData,'ConductorValidationResults.csv'); 
+    writetable(conductorData,strcat(foldersource,'conductorData.csv'));
 end
+
+save(strcat(foldersource,'matlab'))
+%     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
+%     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
+%     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
+%     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
+%     csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);
+writetable(conductorData,strcat(foldersource,'conductorData.csv'));
+% csvwrite(strcat(foldersource,'psols.csv'),psols);
+% csvwrite(strcat(foldersource,'winds.csv'),winds);
+% csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
+% csvwrite(strcat(foldersource,'currents.csv'),currents);

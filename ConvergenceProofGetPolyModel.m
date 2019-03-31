@@ -2,10 +2,16 @@ clear
 clc
 close all
 
+%myCluster = parcluster('Chloe');
+%numWorkers = myCluster.NumWorkers;
+%numWorkers = 12;
+numWorkers=feature('numcores')
+parpool('local',numWorkers)
+
 if(ispc==1)
-    foldersource='C:\Users\ctc\Documents\GitHub\NewtonRaphsonHeatBalance\';
+    foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
 elseif(ismac==1)
-    foldersource='/Users/Shaun/Documents/GitHub/NewtonRaphsonHeatBalance/';
+    foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
 end
@@ -54,7 +60,7 @@ pradrs=zeros(weatherPermutationCount,1);
 bestpoly=zeros(conductorCount,1);
 counter=0;
 
-for imagnitude=0.05:(1.5)/spacer:1.55
+for imagnitude=0.01:(0.5)/spacer:0.51
     for psol=0:maxpsol/spacer:maxpsol
         for ambtemp=-33:98/spacer:65
             for Vw=0:10/spacer:10
@@ -75,12 +81,12 @@ rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=69:12:conductorCount
-    increment=11;
-    if(c1+11>conductorCount)
+for c1=1:numWorkers:conductorCount
+    increment=numWorkers-1;
+    if(c1+increment>conductorCount)
         increment=conductorCount-c1;
     end
-    for c=c1:c1+increment
+    parfor c=c1:c1+increment
         disp(c)
 %         if(c<=polymodelrow) 
 %              if(~(conductorData(c,:).polymodels==""))
@@ -113,29 +119,30 @@ for c1=69:12:conductorCount
         IR2s=(((currents.*maxcurrent).^2)).*(alpha+25*beta);
         x=[(((currents.*maxcurrent).^2)).*alpha,(((currents.*maxcurrent).^2)).*beta,psols.*diam,ambtemps,1./(winds+1),(1./(winds+1)).^2];
         err=realmax;
-        for i=1:15
+        i=5;
+        %for i=5:8
             mdl=MultiPolyRegress(x,root,i);
             if(mdl.CVMAE<err)
                 err=mdl.CVMAE;
                 bestpoly(c)=i;
                 conductorData(c,:).polymodels=func2str(mdl.PolynomialExpression);
             end
-        end
+        %end
         rootinfo(:,c)=root;
         deltainfo(:,c)=delta;
         delta1info(:,c)=delta1;
         cinfo(:,c)=cs;
     end
+    writetable(conductorData,strcat(foldersource,'conductorData.csv'));
+end
     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
     csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);
     writetable(conductorData,strcat(foldersource,'conductorData.csv'));
-end
-
-csvwrite(strcat(foldersource,'psols.csv'),psols);
-csvwrite(strcat(foldersource,'winds.csv'),winds);
-csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
-csvwrite(strcat(foldersource,'currents.csv'),currents);
-csvwrite(strcat(foldersource,'polymodels.csv'),conductorData.polymodels);
+% csvwrite(strcat(foldersource,'psols.csv'),psols);
+% csvwrite(strcat(foldersource,'winds.csv'),winds);
+% csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
+% csvwrite(strcat(foldersource,'currents.csv'),currents);
+% csvwrite(strcat(foldersource,'polymodels.csv'),conductorData.polymodels);

@@ -74,15 +74,15 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         Pcon=zeros(row,1);
         PconPrime=zeros(row,1);
         
-        if(GuessTc~=Ta && Vw==0)
+        if(Vw==0)
             %pure natural convection         
             Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf));
-        elseif(GuessTc~=Ta && Vw ~=0)
+        elseif(round(GuessTc,4)~=round(Ta,4))
             %mixed convection
             Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrimedtc*Lambdaf));
-        elseif(GuessTc==Ta && Vw~=0)
+        else
             %pure forced    
             Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrimedtc*Lambdaf));
