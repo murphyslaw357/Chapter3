@@ -126,7 +126,7 @@ function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrim
             Pcon(i)=pi*Nudf(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nudf(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i)));
             PconPrimePrime(i)=pi*(Nudf(i)*LambdafPrime+NudfPrimedtc(i)*Lambdaf(i)+(LambdafPrime*Nudf(i)+NudfPrimedtc(i)*Lambdaf(i))+(GuessTc(i)-Ta)*(LambdafPrime*NudfPrimedtc(i)+NudfPrimePrimedtc2(i)*Lambdaf(i)+NudfPrimedtc(i)*LambdafPrime));
-        elseif(round(GuessTc(i),4)~=round(Ta,4))
+        elseif(abs(GuessTc(i)-Ta)>0.0001)
         %mixed convection
             Pcon(i)=pi*Nueff(i)*Lambdaf(i)*(GuessTc(i)-Ta);
             PconPrime(i)=pi*(Nueff(i)*Lambdaf(i)+(GuessTc(i)-Ta)*(LambdafPrime*Nueff(i)+NueffPrimedtc(i)*Lambdaf(i)));

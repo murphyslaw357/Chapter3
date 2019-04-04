@@ -2,10 +2,7 @@ clear
 clc
 close all
 
-% % myCluster = parcluster('local');
-% % numWorkers = myCluster.NumWorkers;
-% %numWorkers=4;
- numWorkers=feature('numcores')
+numWorkers=feature('numcores')
 % parpool('local',numWorkers)
 
 if(ispc==1)
@@ -13,7 +10,7 @@ if(ispc==1)
 elseif(ismac==1)
     foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
-    foldersource='/mnt/HA/groups/nieburGrp/Shaun/NewtonRaphsonHeatBalance/';
+    foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
 load(strcat(foldersource,'GrPrSpline.mat'))
@@ -26,9 +23,7 @@ conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
 conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
 conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
 conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
-conductorData.simulated=zeros(conductorCount,1);
-conductorData.convergeCurrent=zeros(conductorCount,1);
-conductorData.lowestRise=zeros(conductorCount,1);
+
 Tref=25;
 epsilons=0.9;
 H=0;
@@ -75,32 +70,30 @@ for imagnitude=0.01:(0.2)/spacer:0.21
     end
 end
 
-convergeCurrents=zeros(conductorCount,1);
-lowestRise=zeros(conductorCount,1);
 deltainfo=zeros(weatherPermutationCount,conductorCount);
 delta1info=zeros(weatherPermutationCount,conductorCount);
 rootinfo=zeros(weatherPermutationCount,conductorCount);
 cinfo=zeros(weatherPermutationCount,conductorCount);
 stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=1:numWorkers:weatherPermutationCount
+for c1=273:numWorkers:weatherPermutationCount
     increment=numWorkers-1;
     if(c1+increment>conductorCount)
         increment=conductorCount-c1;
     end
     for c=c1:c1+increment
         disp(c)
-        if (conductorData(c,:).polymodels=="")
+        if (conductorData(c,:).polymodels=="" || conductorData(c,:).simulated==1)
             continue;
         end
         cdata=conductorData(c,:);  
-        convergeCurrent=0;
-        root=realmax.*ones(weatherPermutationCount,1);
+%         convergeCurrent=0;
+        %root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
-        prads=zeros(weatherPermutationCount,1);
-        pcons=zeros(weatherPermutationCount,1);
-        pir2s=zeros(weatherPermutationCount,1);
+        %prads=zeros(weatherPermutationCount,1);
+        %pcons=zeros(weatherPermutationCount,1);
+        %pir2s=zeros(weatherPermutationCount,1);
         cs=zeros(weatherPermutationCount,1);
         
         maxcurrent=ceil(cdata.AllowableAmpacity);
@@ -108,22 +101,21 @@ for c1=1:numWorkers:weatherPermutationCount
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        polymodel=str2func(conductorData(c,:).polymodels);
+        polymodel=str2func(cdata.polymodels);
         for counter=1:weatherPermutationCount
-            if(currents(counter)<=convergeCurrents(c,1))
+            if(currents(counter)<=conductorData(c,:).convergeCurrent)
                 continue;
             end
-            
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
-            [roott,Pj,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
-            prads(counter)=Prad;
-            pcons(counter)=Pcon;
-            pir2s(counter)=Pj;
+            [roott,Pj,~,~,~,~,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
+%             prads(counter)=Prad;
+%             pcons(counter)=Pcon;
+%             pir2s(counter)=Pj;
 
-            root(counter,1)=roott;           
+            %root(counter,1)=roott;           
             topend=max(roott,GuessTc);
             bottomend=min(roott,GuessTc);
-            temps=(bottomend-10:searchIncrement:topend+10)';
+            temps=(bottomend-1:searchIncrement:topend+1)';
               
             [searchCount,~]=size(temps);
             tempSearch=zeros(searchCount,3);
@@ -157,45 +149,53 @@ for c1=1:numWorkers:weatherPermutationCount
                     if(max(searchRes(:,2))>topend+delta1(counter,1))
                         delta1(counter,1)=0.05+max(searchRes(:,2))-topend;
                         rerun=1;
+                        if(delta1(counter,1)>1)
+                            msg='error condition!';
+                            error(msg)
+                        end
                     end
                     if(min(searchRes(:,2))<bottomend-delta(counter,1))
                         delta(counter,1)=0.05+bottomend-min(searchRes(:,2));
                         rerun=1;
+                        if(delta(counter,1)>1)
+                            msg='error condition!';
+                            error(msg)
+                        end
                     end
                 end
             end
 
             if(row>1)
                 cs(counter)=max(searchRes(:,3));
-                if(cs(counter)>1 && currents(counter)>convergeCurrents(c,1))
-                    convergeCurrents(c,1)=currents(counter);
+                if(cs(counter)>1 && currents(counter)>conductorData(c,:).convergeCurrent)
+                    conductorData(c,:).convergeCurrent=currents(counter);
+                    
                     disp(currents(counter))
                 end
-                if(cs(counter)>1 && (roott-ambtemps(counter))>lowestRise(c))
-                    lowestRise(c)=(roott-ambtemps(counter));
-                    disp((roott-ambtemps(counter)))
-                end
+%                 if(cs(counter)>1 && (roott-ambtemps(counter))>conductorData(c,:).lowestRise)
+%                     conductorData(c,:).lowestRise=(roott-ambtemps(counter));
+%                     disp((roott-ambtemps(counter)))
+%                 end
             end
         end
 
         conductorData(c,:).simulated=1;
-        conductorData(c,:).convergeCurrent=convergeCurrents(c,1);
-        conductorData(c,:).lowestRise=lowestRise(c);
-        rootinfo(:,c)=root;
-        deltainfo(:,c)=delta;
-        delta1info(:,c)=delta1;
-        cinfo(:,c)=cs;
+%         rootinfo(:,c)=root;
+%         deltainfo(:,c)=delta;
+%         delta1info(:,c)=delta1;
+%         cinfo(:,c)=cs;
     end
     writetable(conductorData,strcat(foldersource,'conductorData.csv'));
 end
 
 save(strcat(foldersource,'matlab'))
-%     csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
-%     csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
-%     csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
-%     csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
-%     csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);
 writetable(conductorData,strcat(foldersource,'conductorData.csv'));
+
+% csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
+% csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
+% csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
+% csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
+% csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);    
 % csvwrite(strcat(foldersource,'psols.csv'),psols);
 % csvwrite(strcat(foldersource,'winds.csv'),winds);
 % csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
