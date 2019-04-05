@@ -39,21 +39,18 @@ psols=zeros(weatherPermutationCount,1);
 winds=zeros(weatherPermutationCount,1);
 ambtemps=zeros(weatherPermutationCount,1);
 currents=zeros(weatherPermutationCount,1);
-hs=zeros(weatherPermutationCount,1);
-hprimes=zeros(weatherPermutationCount,1);
-pconprimeprimes=zeros(weatherPermutationCount,1);
-pradprimeprimes=zeros(weatherPermutationCount,1);
-initguess=zeros(weatherPermutationCount,1);
-pconas=zeros(weatherPermutationCount,1);
-pconbs=zeros(weatherPermutationCount,1);
-pconrs=zeros(weatherPermutationCount,1);
-pradas=zeros(weatherPermutationCount,1);
-pradbs=zeros(weatherPermutationCount,1);
-pradrs=zeros(weatherPermutationCount,1);
+% hs=zeros(weatherPermutationCount,1);
+% hprimes=zeros(weatherPermutationCount,1);
+% pconprimeprimes=zeros(weatherPermutationCount,1);
+% pradprimeprimes=zeros(weatherPermutationCount,1);
+% initguess=zeros(weatherPermutationCount,1);
+% pconas=zeros(weatherPermutationCount,1);
+% pconbs=zeros(weatherPermutationCount,1);
+% pconrs=zeros(weatherPermutationCount,1);
+% pradas=zeros(weatherPermutationCount,1);
+% pradbs=zeros(weatherPermutationCount,1);
+% pradrs=zeros(weatherPermutationCount,1);
 
-% polymodels=importfileAB(strcat(foldersource,'polymodels.csv'));
-% [polymodelrow,~]=size(polymodels);
-bestpoly=zeros(conductorCount,1);
 counter=0;
 
 for imagnitude=0.01:(0.2)/spacer:0.21
@@ -70,30 +67,32 @@ for imagnitude=0.01:(0.2)/spacer:0.21
     end
 end
 
-deltainfo=zeros(weatherPermutationCount,conductorCount);
-delta1info=zeros(weatherPermutationCount,conductorCount);
-rootinfo=zeros(weatherPermutationCount,conductorCount);
-cinfo=zeros(weatherPermutationCount,conductorCount);
-stepinfo=zeros(weatherPermutationCount,conductorCount);
+% deltainfo=zeros(weatherPermutationCount,conductorCount);
+% delta1info=zeros(weatherPermutationCount,conductorCount);
+% rootinfo=zeros(weatherPermutationCount,conductorCount);
+% cinfo=zeros(weatherPermutationCount,conductorCount);
+% stepinfo=zeros(weatherPermutationCount,conductorCount);
 
-for c1=273:numWorkers:weatherPermutationCount
+conductorData.Cmax=zeros(conductorCount,1);
+conductorData.Cmin=zeros(conductorCount,1);
+
+for c1=1:numWorkers:weatherPermutationCount
     increment=numWorkers-1;
     if(c1+increment>conductorCount)
         increment=conductorCount-c1;
     end
     for c=c1:c1+increment
         disp(c)
-        if (conductorData(c,:).polymodels=="" || conductorData(c,:).simulated==1)
-            continue;
-        end
+%         if (conductorData(c,:).polymodels=="" || conductorData(c,:).simulated==1)
+%             continue;
+%         end
         cdata=conductorData(c,:);  
-%         convergeCurrent=0;
-        %root=realmax.*ones(weatherPermutationCount,1);
+%         root=realmax.*ones(weatherPermutationCount,1);
         delta=zeros(weatherPermutationCount,1);
         delta1=zeros(weatherPermutationCount,1);
-        %prads=zeros(weatherPermutationCount,1);
-        %pcons=zeros(weatherPermutationCount,1);
-        %pir2s=zeros(weatherPermutationCount,1);
+%         prads=zeros(weatherPermutationCount,1);
+%         pcons=zeros(weatherPermutationCount,1);
+%         pir2s=zeros(weatherPermutationCount,1);
         cs=zeros(weatherPermutationCount,1);
         
         maxcurrent=ceil(cdata.AllowableAmpacity);
@@ -101,21 +100,18 @@ for c1=273:numWorkers:weatherPermutationCount
         beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
         alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        polymodel=str2func(cdata.polymodels);
+        polymodel=str2func(conductorData(c,:).polymodels);
         for counter=1:weatherPermutationCount
             if(currents(counter)<=conductorData(c,:).convergeCurrent)
                 continue;
             end
             GuessTc=GetGuessTemp(currents(counter)*maxcurrent,ambtemps(counter),diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),polymodel);       
             [roott,Pj,~,~,~,~,~] = GetTempNewton(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
-%             prads(counter)=Prad;
-%             pcons(counter)=Pcon;
-%             pir2s(counter)=Pj;
 
-            %root(counter,1)=roott;           
+%             root(counter,1)=roott;           
             topend=max(roott,GuessTc);
             bottomend=min(roott,GuessTc);
-            temps=(bottomend-1:searchIncrement:topend+1)';
+            temps=(bottomend-10:searchIncrement:topend+10)';
               
             [searchCount,~]=size(temps);
             tempSearch=zeros(searchCount,3);
@@ -127,12 +123,6 @@ for c1=273:numWorkers:weatherPermutationCount
             hprimeprime=-1*PconPrimePrime-PradPrimePrime;
             tempSearch(:,2)=Tc;
             tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
-%             tempSearch(:,4)=h;
-%             tempSearch(:,5)=hprime;
-%             tempSearch(:,6)=hprimeprime;
-%             tempSearch(:,7)=I2R;
-%             tempSearch(:,8)=Pcon;
-%             tempSearch(:,9)=Prad;
             rerun=1;
             reruncounter=0;
 
@@ -149,54 +139,31 @@ for c1=273:numWorkers:weatherPermutationCount
                     if(max(searchRes(:,2))>topend+delta1(counter,1))
                         delta1(counter,1)=0.05+max(searchRes(:,2))-topend;
                         rerun=1;
-                        if(delta1(counter,1)>1)
-                            msg='error condition!';
-                            error(msg)
-                        end
                     end
                     if(min(searchRes(:,2))<bottomend-delta(counter,1))
                         delta(counter,1)=0.05+bottomend-min(searchRes(:,2));
                         rerun=1;
-                        if(delta(counter,1)>1)
-                            msg='error condition!';
-                            error(msg)
-                        end
                     end
                 end
             end
-
             if(row>1)
                 cs(counter)=max(searchRes(:,3));
                 if(cs(counter)>1 && currents(counter)>conductorData(c,:).convergeCurrent)
                     conductorData(c,:).convergeCurrent=currents(counter);
-                    
                     disp(currents(counter))
                 end
-%                 if(cs(counter)>1 && (roott-ambtemps(counter))>conductorData(c,:).lowestRise)
-%                     conductorData(c,:).lowestRise=(roott-ambtemps(counter));
-%                     disp((roott-ambtemps(counter)))
-%                 end
+                if(cs(counter)>1 && (roott-ambtemps(counter))>conductorData(c,:).lowestRise)
+                    conductorData(c,:).lowestRise=(roott-ambtemps(counter));
+                    disp((roott-ambtemps(counter)))
+                end
             end
         end
-
+        conductorData(c,:).Cmax=max(cs);
+        conductorData(c,:).Cmin=min(cs(cs~=0));
         conductorData(c,:).simulated=1;
-%         rootinfo(:,c)=root;
-%         deltainfo(:,c)=delta;
-%         delta1info(:,c)=delta1;
-%         cinfo(:,c)=cs;
     end
     writetable(conductorData,strcat(foldersource,'conductorData.csv'));
 end
 
 save(strcat(foldersource,'matlab'))
 writetable(conductorData,strcat(foldersource,'conductorData.csv'));
-
-% csvwrite(strcat(foldersource,'rootinfo.csv'),rootinfo);
-% csvwrite(strcat(foldersource,'deltainfo.csv'),deltainfo);
-% csvwrite(strcat(foldersource,'delta1info.csv'),delta1info);
-% csvwrite(strcat(foldersource,'cinfo.csv'),cinfo);
-% csvwrite(strcat(foldersource,'convergeCurrents.csv'),convergeCurrents);    
-% csvwrite(strcat(foldersource,'psols.csv'),psols);
-% csvwrite(strcat(foldersource,'winds.csv'),winds);
-% csvwrite(strcat(foldersource,'ambtemps.csv'),ambtemps);
-% csvwrite(strcat(foldersource,'currents.csv'),currents);

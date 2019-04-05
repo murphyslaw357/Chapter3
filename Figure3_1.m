@@ -26,4 +26,8 @@ line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
 xlabel('Conductor Index')
 ylabel('Minimum Convergence Current (%)')
-saveas(gcf,strcat(foldersource,'Figure3_1.jpg'))
+fig = gcf;
+fig.PaperPositionMode = 'auto';
+print(gcf,strcat(foldersource,'Figure3_1.jpg'),'-r1200','-djpeg')
+
+% saveas(gcf,strcat(foldersource,'Figure3_1.jpg'))
