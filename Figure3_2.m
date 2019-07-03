@@ -11,8 +11,8 @@ end
 conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
 [conductorCount,~] = size(conductorData);
 
-cMax=conductorData.convergeCurrent;
-cMin=cMax+0.1;
+cMax=conductorData.Cmax;
+cMin=conductorData.Cmin;
 plot(cMax)
 ylim([0 1])
 hold on
@@ -28,4 +28,4 @@ line([339 339],yL,'LineStyle','--','Color','r');
 legend('Maximum C','Minimum C')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
-saveas(gcf,strcat(foldersource,'Figure3_2.jpg'))
+print(gcf,strcat(foldersource,'Figure3_2.jpg'),'-r1200','-djpeg')
