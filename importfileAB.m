@@ -49,7 +49,7 @@ end
 %	column26: double (%f)
 %   column27: double (%f)
 % For more information, see the TEXTSCAN documentation.
-formatSpec = '%q%f%C%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%C%f%f%f%f%q%f%f%[^\n\r]';
+formatSpec = '%q%f%q%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%C%f%f%f%f%q%f%f%[^\n\r]';
 
 %% Open the text file.
 fileID = fopen(filename,'r');
