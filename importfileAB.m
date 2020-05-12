@@ -40,7 +40,7 @@ end
 %   column17: double (%f)
 %	column18: double (%f)
 %   column19: double (%f)
-%	column20: categorical (%C)
+%	column20: text (%q)
 %   column21: double (%f)
 %	column22: double (%f)
 %   column23: double (%f)
@@ -49,7 +49,7 @@ end
 %	column26: double (%f)
 %   column27: double (%f)
 % For more information, see the TEXTSCAN documentation.
-formatSpec = '%q%f%q%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%C%f%f%f%f%q%f%f%[^\n\r]';
+formatSpec = '%q%f%q%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%q%f%f%f%f%q%f%f%[^\n\r]';
 
 %% Open the text file.
 fileID = fopen(filename,'r');

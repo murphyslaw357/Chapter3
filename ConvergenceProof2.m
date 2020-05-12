@@ -83,7 +83,7 @@ for c1=1:numWorkers:weatherPermutationCount
     if(c1+increment>conductorCount)
         increment=conductorCount-c1;
     end
-    parfor c=c1:c1+increment
+    for c=c1:c1+increment
         disp(c)
         if (conductorData(c,:).polymodels=="" || conductorData(c,:).simulated==1)
             continue;

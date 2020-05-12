@@ -14,7 +14,7 @@ conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
 diff=0.2/15;
 convergeLimit=conductorData.convergeCurrent+diff;
 plot(convergeLimit.*100)
-ylim([0 10])
+ylim([0 7.5])
 hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
