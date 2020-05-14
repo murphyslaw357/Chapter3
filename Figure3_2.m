@@ -13,10 +13,12 @@ end
 conductorData=importfile46(strcat(foldersource,'conductorDataResults.csv'));
 [conductorCount,~] = size(conductorData);
 
+figure('Renderer', 'painters', 'Position', [10 10 500 600]);
+
 cMax=conductorData.Cmax;
 cMin=conductorData.Cmin;
 subplot(2,1,1);
-plot(cMax)
+plot(cMax,'linewidth',0.9)
 ylim([0 1])
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
@@ -31,7 +33,7 @@ legend('Maximum C')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
 subplot(2,1,2); 
-plot(cMin)
+plot(cMin,'linewidth',0.9)
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');
@@ -43,4 +45,13 @@ line([339 339],yL,'LineStyle','--','Color','r');
 legend('Minimum C')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
-print(gcf,strcat(foldersource,'Figure3_2.jpg'),'-r1200','-djpeg')
+set(gca,'FontSize',10)
+
+savefig(strcat(foldersource,'Figure3_2.fig'))
+set(gcf, 'Color', 'w');
+
+if(ispc)
+    export_fig C:\Users\ctc\Documents\GitHub\Chapter3\Figure3_2.png -m3
+elseif(ismac)
+    export_fig /Volumes/THESIS/Github/Chapter3/Figure3_2.png -m3
+end
