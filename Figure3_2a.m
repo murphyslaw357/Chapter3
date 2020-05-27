@@ -29,12 +29,10 @@ conductorDataTotal=sortrows(conductorDataTotal,'Index');
 
 [conductorCount,~] = size(conductorDataTotal);
 
-diff=0.05/20;
-convergeLimit=conductorDataTotal.convergeCurrent+diff;
 figure('Renderer', 'painters', 'Position', [10 10 500 300]);
-plot(convergeLimit.*100)
-ylim([0 5])
-hold on
+plot(conductorDataTotal.lowestRise)
+% ylim([0 5])
+% hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');
@@ -44,7 +42,7 @@ line([230 230],yL,'LineStyle','--','Color','r');
 line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
 xlabel('Conductor Index')
-ylabel('Minimum Convergence Current (%)')
+ylabel('Minimum Conductor Temperature Rise (°C)')
 
 set(gca,'FontSize',10)
 

@@ -33,16 +33,10 @@ fgrpr6=0.125.*grprx6.^0.333;
 grprx=[grprx1 grprx2 grprx3 grprx4 grprx5 grprx6];
 fgrpr=[fgrpr1 fgrpr2 fgrpr3 fgrpr4 fgrpr5 fgrpr6];
    
-%[f,gof,out] = fit(grprx',fgrpr','smoothingspline','SmoothingParam',1);
-[f,gof,out] = fit(grprx',fgrpr','exp2');
-%[f,gof,out] = fit(grprx',fgrpr','a*x^b','startpoint',[1/4,1/3]);
+[f,~,~] = fit(grprx',fgrpr','a*x^b','startpoint',[1/4,1/3])
 weights=[weight1;weight2;weight3;weight4;weight5;weight6];
 MAPE1=100*mean(abs(weights.*(fgrpr'-f(grprx'))./(fgrpr')))./sum(weights)   
-% save('GrPrSpline.mat','f')
-   
-clear
-%clc
-  
+    
 lim1=0;
 lim2=(0.565/0.437)^(1/(0.0895-0.136));
 lim3=(0.8/0.565)^(1/(0.136-0.280));
@@ -80,6 +74,6 @@ weights=[weight1;weight2;weight3;weight4;weight5;weight6;weight7];
 x=[x1 x2 x3 x4 x5 x6 x7];
 f=[f1 f2 f3 f4 f5 f6 f7];
 
-[ff,gof,out] = fit(x',f','a*x^b','startpoint',[1/4,1/3]);
+[ff,~,~] = fit(x',f','a*x^b','startpoint',[1/4,1/3])
 MAPE2=100*mean(weights.*abs((f'-ff(x'))./(f')))/sum(weights)
 [ffinv,gof,out] = fit(f',x','a*x^b','startpoint',[1/4,1/3]);

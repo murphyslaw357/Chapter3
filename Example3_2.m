@@ -40,7 +40,7 @@ C4=((2*pi*k)./(log(Deq/r)-log(((H12(Trefloc).*H23(Trefloc).*H31(Trefloc)).^(1/3)
 C5=((2*pi*k)./(log(Deq/r)-log(((H12.*H23.*H31).^(1/3))./((H1.*H2.*H3).^(1/3))))).*S;
 C6=((2*pi*k)./(log(Deq/r)-log(((H12.*H23.*H31).^(1/3))./((H1.*H2.*H3).^(1/3))))).*L;
 
-figure('Renderer', 'painters', 'Position', [10 10 500 600]);
+figure('Renderer', 'painters', 'Position', [10 10 900 500]);
 plot(Temp,100.*abs(C6-C1)./C6,'linewidth',1)
 hold on
 plot(Temp,100.*abs(C6-C2)./C6,'linewidth',1)
@@ -49,7 +49,7 @@ plot(Temp,100.*abs(C6-C4)./C6,'linewidth',1)
 plot(Temp,100.*abs(C6-C5)./C6,'linewidth',1)
 xlabel('Conductor Temperature - ^{\circ}C')
 ylabel('Absolute Error - %')
-legend('Fixed Length, Neglected Ground','Variable Length, Neglected Ground','Fixed Length, Fixed Ground','Variable Length, Fixed Ground','Fixed Length, Ground Included','Location', 'southoutside')
+legend('Fixed Length, Neglected Height to Ground','Variable Length, Neglected Height to Ground','Fixed Length, Fixed Height to Ground','Variable Length, Fixed Height to Ground','Fixed Length, Variable Height to Included','Location', 'eastoutside')
 xlim([-40 110])
 
 set(gca,'FontSize',10)
