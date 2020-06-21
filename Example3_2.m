@@ -40,7 +40,7 @@ C4=((2*pi*k)./(log(Deq/r)-log(((H12(Trefloc).*H23(Trefloc).*H31(Trefloc)).^(1/3)
 C5=((2*pi*k)./(log(Deq/r)-log(((H12.*H23.*H31).^(1/3))./((H1.*H2.*H3).^(1/3))))).*S;
 C6=((2*pi*k)./(log(Deq/r)-log(((H12.*H23.*H31).^(1/3))./((H1.*H2.*H3).^(1/3))))).*L;
 
-figure('Renderer', 'painters', 'Position', [10 10 900 500]);
+figure('Renderer', 'painters', 'Position', [10 10 700 400]);
 plot(Temp,100.*abs(C6-C1)./C6,'linewidth',1)
 hold on
 plot(Temp,100.*abs(C6-C2)./C6,'linewidth',1)
@@ -49,14 +49,22 @@ plot(Temp,100.*abs(C6-C4)./C6,'linewidth',1)
 plot(Temp,100.*abs(C6-C5)./C6,'linewidth',1)
 xlabel('Conductor Temperature - ^{\circ}C')
 ylabel('Absolute Error - %')
-legend('Fixed Length, Neglected Height to Ground','Variable Length, Neglected Height to Ground','Fixed Length, Fixed Height to Ground','Variable Length, Fixed Height to Ground','Fixed Length, Variable Height to Included','Location', 'eastoutside')
+legend('Fixed Length, Neglected Height to Ground','Variable Length, Neglected Height to Ground','Fixed Length, Fixed Height to Ground','Variable Length, Fixed Height to Ground','Fixed Length, Variable Height to Included','Location', 'southoutside')
 xlim([-40 110])
 
-set(gca,'FontSize',10)
-savefig(strcat(foldersource,'Figure3_5.fig'))
+ax = gca;
+ax.YGrid = 'on';
+ax.GridLineStyle = '-';
+
 set(gcf, 'Color', 'w');
-if(ispc)
-    export_fig C:\Users\ctc\Documents\GitHub\Chapter3\Figure3_5.png -m3
-elseif(ismac)
-    export_fig /Volumes/THESIS/Github/Chapter3/Figure3_5.png -m3
-end
+set(gca, 'FontName', 'Calibri')
+set(gca,'fontsize', 11)
+
+%savefig(strcat(foldersource,'Figure3_3.fig'))
+set(gcf, 'Color', 'w');
+
+% if(ispc)
+%     export_fig C:\Users\ctc\Documents\GitHub\Chapter3\Figure3_5.png -m3
+% elseif(ismac)
+%     export_fig /Volumes/THESIS/Github/Chapter3/Figure3_5.png -m3
+% end

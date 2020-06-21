@@ -6,7 +6,7 @@ elseif(ismac==1)
     foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
     startCond = str2num(getenv('SGE_TASK_ID'))
-    endCond = startCond + 15
+    endCond = startCond + 1
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
@@ -14,20 +14,25 @@ load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
 %% Load conductor info
-conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
-[conductorCount,~]=size(conductorData);
-conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
-conductorData.ResistanceACLowdegcMeter=...
-    conductorData.ResistanceACLowdegc./...
-    conductorData.MetersperResistanceInterval;
-conductorData.ResistanceACHighdegcMeter=...
-    conductorData.ResistanceACHighdegc./...
-    conductorData.MetersperResistanceInterval;
-conductorData.convergenceOrder=realmax.*ones(conductorCount,1);
-conductorData.simulated=zeros(conductorCount,1);
-conductorData.Cmax=zeros(conductorCount,1);
-conductorData.Cmin=zeros(conductorCount,1);
-conductorData.convergeCurrent = zeros(conductorCount,1);
+load(strcat(foldersource,'conductorInfoPoly.mat'))
+%conductorData=importfileAB(strcat(foldersource,'conductorData.csv'));
+[conductorCount,~]=size(conductorInfo);
+
+conductorInfo.ResistanceACLowdegc=conductorInfo.ResistanceDCLowdegc;
+conductorInfo.ResistanceACLowdegcMeter=...
+    conductorInfo.ResistanceACLowdegc./...
+    conductorInfo.MetersperResistanceInterval;
+conductorInfo.ResistanceACHighdegcMeter=...
+    conductorInfo.ResistanceACHighdegc./...
+    conductorInfo.MetersperResistanceInterval;
+conductorInfo.simulated=zeros(conductorCount,1);
+conductorInfo.convergenceOrder=realmax.*ones(conductorCount,1);
+conductorInfo.Cmax=zeros(conductorCount,1);
+conductorInfo.Cmin=zeros(conductorCount,1);
+conductorInfo.convergeCurrent = zeros(conductorCount,1);
+conductorInfo.lowestRise = zeros(conductorCount,1);
+conductorInfo.lilBottomEnd = zeros(conductorCount,1);
+conductorInfo.lilTopEnd = zeros(conductorCount,1);
 %% Setup weather data
 epsilons=0.9;
 H=0;
@@ -64,12 +69,12 @@ if endCond>conductorCount
 end
 for c=startCond:endCond
     disp(c)
-    if(conductorData(c,:).polymodels==""||conductorData(c,:).simulated==1)
+    if(conductorInfo(c,:).polymodels==""||conductorInfo(c,:).simulated==1)
         continue;
     end
-    cdata=conductorData(c,:);  
-    delta=zeros(weatherPermutationCount,1);
-    delta1=zeros(weatherPermutationCount,1);
+    cdata=conductorInfo(c,:);  
+%     delta=zeros(weatherPermutationCount,1);
+%     delta1=zeros(weatherPermutationCount,1);
     cs=zeros(weatherPermutationCount,1);
 
     maxcurrent=ceil(cdata.AllowableAmpacity);
@@ -77,17 +82,14 @@ for c=startCond:endCond
     beta=(cdata.ResistanceACHighdegcMeter-...
         cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
-    polymodel=str2func(conductorData(c,:).polymodels);
+    polymodel=str2func(conductorInfo(c,:).polymodels);
     for counter=1:weatherPermutationCount
-        if(currents(counter)<=conductorData(c,:).convergeCurrent+0.0001)
+        if(currents(counter)<=conductorInfo(c,:).convergeCurrent) %+0.0001
             continue;
         end
         GuessTc=GetGuessTemp(currents(counter)*maxcurrent,...
             ambtemps(counter),diam,phi,winds(counter),alpha,beta,...
             epsilons,psols(counter),polymodel);       
-        if(GuessTc==ambtemps(counter))
-            GuessTc=ambtemps(counter)+0.1;
-        end
         [roott,~,~,~,~,~,~] = GetTempNewton(currents(counter)*...
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
             alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
@@ -95,27 +97,14 @@ for c=startCond:endCond
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
             alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel,roott);
 
-        if(convergenceOrder<conductorData(c,:).convergenceOrder)
-            conductorData(c,:).convergenceOrder=convergenceOrder;
+        if(convergenceOrder<conductorInfo(c,:).convergenceOrder)
+            conductorInfo(c,:).convergenceOrder=convergenceOrder;
         end
-        topend=max(roott,GuessTc);
-        bottomend=min(roott,GuessTc);
-        temps=(bottomend-10:searchIncrement:topend+10)';
-
-        [searchCount,~]=size(temps);
-        tempSearch=zeros(searchCount,3);
-        tempSearch(:,1)=temps;
-        [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,...
-            PconPrimePrime,~,~,~] =GetTempNewtonFirstIteration2(...
-            currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,...
-            winds(counter),alpha,beta,epsilons,psols(counter),...
-            tempSearch(:,1));%,f,ff,ffinv
-
-        h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
-        hprime=I2Rprime-PconPrime-PradPrime;
-        hprimeprime=-1*PconPrimePrime-PradPrimePrime;
-        tempSearch(:,2)=Tc;
-        tempSearch(:,3)=abs((h.*hprimeprime)./(hprime.^2));
+        
+        lilTopEnd=max(roott,GuessTc)+0.05;
+        lilBottomEnd=min(roott,GuessTc);
+        bigTopEnd=lilTopEnd+10;
+        bigBottomEnd=lilBottomEnd-10;
         rerun=1;
         reruncounter=0;
 
@@ -123,43 +112,68 @@ for c=startCond:endCond
             rerun=0;
             reruncounter=reruncounter+1;
             if(reruncounter>5000)
-                msg='error condition!';
+                msg='error condition: rerun counter exceeded limit';
                 error(msg)
             end
-            searchRes=tempSearch(tempSearch(:,1)>=bottomend-...
-                delta(counter,1) & tempSearch(:,1)<=...
-                topend+delta1(counter,1),:);
-            [row,~]=size(searchRes);
-            if(row>1)
-                if(max(searchRes(:,2))>topend+delta1(counter,1))
-                    delta1(counter,1)=0.05+max(searchRes(:,2))-topend;
-                    rerun=1;
-                end
-                if(min(searchRes(:,2))<bottomend-delta(counter,1))
-                    delta(counter,1)=0.05+bottomend-min(searchRes(:,2));
-                    rerun=1;
-                end
+            
+            searchIncrement = (lilTopEnd-lilBottomEnd)/50;
+            
+            temps=[(bigBottomEnd:searchIncrement:bigTopEnd)'; lilTopEnd; lilBottomEnd];
+            temps(temps<=ambtemps(counter))=[];
+            searchCount=size(temps,1);
+
+            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,...
+                PconPrimePrime,~,~,~] =GetTempNewtonFirstIteration2(...
+                currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,...
+                winds(counter),alpha,beta,epsilons,psols(counter),...
+                temps,f,ff,ffinv);
+
+            h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
+            hprime=I2Rprime-PconPrime-PradPrime;
+            hprimeprime=-1*PconPrimePrime-PradPrimePrime;
+
+            bigSearch=horzcat(temps,Tc,abs((h.*hprimeprime)./(hprime.^2)));
+            
+            searchRes=bigSearch(bigSearch(:,1)>=lilBottomEnd & ...
+            bigSearch(:,1)<= lilTopEnd,:);
+            if(max(searchRes(:,2))>bigTopEnd || (min(searchRes(:,2))<bigBottomEnd && min(searchRes(:,2))>ambtemps(counter)))
+                msg='error condition: temp iteration excursion';
+                error(msg)
+            end
+            if(min(searchRes(:,2))<=ambtemps(counter))
+                conductorInfo(c,:).convergeCurrent=currents(counter);
+                disp(strcat('Convergence current too low: ',num2str(currents(counter))))
+                break
+            end
+            if(max(searchRes(:,2))>lilTopEnd)
+                lilTopEnd=max(searchRes(:,2));
+                rerun=1;
+            end
+            if(min(searchRes(:,2))<lilBottomEnd)
+                lilBottomEnd=min(searchRes(:,2));
+                rerun=1;
             end
         end
-        if(row>1)
-            cs(counter)=max(searchRes(:,3));
-            if(cs(counter)>1 && ...
-                    currents(counter)>conductorData(c,:).convergeCurrent)
-                conductorData(c,:).convergeCurrent=currents(counter);
-                disp(currents(counter))
-            end
-            if(cs(counter)>1 && (roott-ambtemps(counter))>...
-                    conductorData(c,:).lowestRise)
-                conductorData(c,:).lowestRise=(roott-ambtemps(counter));
-%                 disp((roott-ambtemps(counter)))
-            end
+        
+        cs(counter)=max(searchRes(:,3));
+        if(cs(counter)>1) %&& ...
+                %currents(counter)>conductorInfo(c,:).convergeCurrent)
+            conductorInfo(c,:).convergeCurrent=currents(counter);
+            disp(strcat('Convergence current too low: ',num2str(currents(counter))))
+        end
+        if(cs(counter)>1 && (roott-ambtemps(counter))>...
+                conductorInfo(c,:).lowestRise)
+            conductorInfo(c,:).lowestRise=(roott-ambtemps(counter));
+            disp(strcat('Minimum conductor rise updated: ',num2str(roott-ambtemps(counter))))
         end
     end
-    conductorData(c,:).Cmax=max(cs);
-    conductorData(c,:).Cmin=min(cs(cs~=0));
-    conductorData(c,:).simulated=1;
+    conductorInfo(c,:).lilBottomEnd=lilBottomEnd;
+    conductorInfo(c,:).lilTopEnd=lilTopEnd;
+    conductorInfo(c,:).Cmax=max(cs);
+    conductorInfo(c,:).Cmin=min(cs(cs~=0));
+    conductorInfo(c,:).simulated=1;
 end
-conductorData = conductorData(startCond:endCond,:);
-conductorData.Index = (startCond:endCond)';
+conductorInfo = conductorInfo(startCond:endCond,:);
+conductorInfo.Index = (startCond:endCond)';
 
-save(strcat(foldersource,num2str(startCond),'matlab'))
+save(strcat(foldersource,'Chapter3_July2020',num2str(startCond),'matlab.mat'))

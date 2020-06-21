@@ -10,10 +10,9 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;
-    phi=pi/2;
-    [GuessTc]=GetGuessTemp(abs(I),Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl);
-    GuessTc2=GuessTc;
-    Tolerance=0.001; %tolerance criteria for Newton's method
+    
+    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl);
+    Tolerance=1e-5; %tolerance criteria for Newton's method
     update=realmax;
     TfilmkPrime=1/2;
     PrPrime=-1.25e-4;
@@ -70,9 +69,9 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         Nu=fReNu(Re);  
         NuPrimedre=differentiate(fReNu,Re);
         NuPrimedtc=NuPrimedre.*RePrimedtc;
-        [row,~]=size(GuessTc);
-        Pcon=zeros(row,1);
-        PconPrime=zeros(row,1);
+%         [row,~]=size(GuessTc);
+%         Pcon=zeros(row,1);
+%         PconPrime=zeros(row,1);
         
         if(Vw==0)
             %pure natural convection         
@@ -94,17 +93,15 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
             msg='error condition';
             error(msg);
         end
-
+        
         Mismatch=I2R+Psol*D-Prad-Pcon;
         update=Mismatch/Hprime;
-        GuessTc=GuessTc-update;   
+        GuessTc=GuessTc-update; 
 
         if(counter>=5000)
             GuessTc=nan;
             break;
         end
-    end
-    if(abs(GuessTc2-GuessTc)>100)
     end
     
     if(isnan(GuessTc))
