@@ -10,16 +10,17 @@ elseif(isunix==1)
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
-conductorData=importfile46(strcat(foldersource,'conductorDataResults.csv'));
-[conductorCount,~] = size(conductorData);
+% conductorData=importfile46(strcat(foldersource,'conductorDataResults.csv'));
+load(strcat(foldersource,'conductorInfoStep2.mat'))
+[conductorCount,~] = size(conductorInfo);
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
 
-cMax=conductorData.Cmax;
-cMin=conductorData.Cmin;
+cMax=conductorInfo.Cmax;
+cMin=conductorInfo.Cmin;
 subplot(2,1,1);
 plot(cMax,'linewidth',1)
-ylim([0 1])
+% ylim([0 1])
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');

@@ -32,6 +32,7 @@ conductorInfo.convergeCurrent = zeros(conductorCount,1);
 conductorInfo.lowestRise = realmax.*ones(conductorCount,1);
 conductorInfo.lilBottomEnd = zeros(conductorCount,1);
 conductorInfo.lilTopEnd = zeros(conductorCount,1);
+conductorInfo.guessMAPE = zeros(conductorCount,1);
 %% Setup weather data
 epsilons=0.9;
 H=0;
@@ -43,7 +44,7 @@ spacer=10;
 psols=0:maxpsol/spacer:maxpsol;
 winds=0:10/spacer:10;
 ambtemps=-33:98/spacer:65;
-currents=0.0025:0.0025:0.1;
+currents=0.002:0.0005*10:0.01*20;
 inputCombo = allcomb(currents,psols,winds,ambtemps);
 currents=inputCombo(:,1);
 psols=inputCombo(:,2);
@@ -51,7 +52,7 @@ winds=inputCombo(:,3);
 ambtemps=inputCombo(:,4);
 
 weatherPermutationCount = size(inputCombo,1);
-output = zeros(weatherPermutationCount,3);
+output = zeros(weatherPermutationCount,4);
 %% Run conductor simulation 
 if endCond>conductorCount
     endCond=conductorCount;
@@ -107,7 +108,8 @@ for c=startCond:endCond
         while(rerun)
             rerun=0;
             reruncounter=reruncounter+1;
-            cs=zeros(weatherPermutationCount,1);
+            cmin=zeros(weatherPermutationCount,1);
+            cmax=zeros(weatherPermutationCount,1);
             if(reruncounter>5000)
                 msg='error condition: rerun counter exceeded limit';
                 error(msg)
@@ -159,24 +161,28 @@ for c=startCond:endCond
                 break
             end
         end
-        cs(counter)=max(searchRes(:,3));
-        if(mod(counter,1000)==0)
+        cmin(counter)=min(searchRes(:,3));
+        cmax(counter)=max(searchRes(:,3));
+        if(ispc && mod(counter,1000)==0)
             disp(strcat(num2str(100*counter/weatherPermutationCount),'%'))
         end
 %         if(roott-ambtemps(counter) < conductorInfo(c,:).lowestRise)
 %             conductorInfo(c,:).lowestRise=roott-ambtemps(counter);
 %             disp(strcat('Minimum conductor rise updated: ',num2str(roott-ambtemps(counter))))
-%         end
+%         end%
     end
-    output(:,3)=output(:,2)-ambtemps;
-    output=output(currents>conductorInfo(c,:).convergeCurrent,:);
-    conductorInfo(c,:).lowestRise=min(output(output(:,3)~=0,3));
-    conductorInfo(c,:).Cmax=max(cs);
-    conductorInfo(c,:).Cmin=min(cs(cs~=0));
-    conductorInfo(c,:).simulated=1;
     conductorInfo(c,:).convergeCurrent=min(currents(currents>conductorInfo(c,:).convergeCurrent));
+    output=output(currents>conductorInfo(c,:).convergeCurrent,:);
+    output(:,3)=output(:,2)-ambtemps(currents>conductorInfo(c,:).convergeCurrent);
+    output(:,4)=(output(:,2)-output(:,1))./output(:,2);
+    
+    conductorInfo(c,:).guessMAPE=mean(abs(output(:,4)));
+    conductorInfo(c,:).lowestRise=min(output(output(:,3)~=0,3));
+    conductorInfo(c,:).Cmax=max(cmax(currents>conductorInfo(c,:).convergeCurrent));
+    conductorInfo(c,:).Cmin=min(cmin(cmin~=0 & currents>conductorInfo(c,:).convergeCurrent));
+    conductorInfo(c,:).simulated=1;
 end
 conductorInfo = conductorInfo(startCond:endCond,:);
 conductorInfo.Index = (startCond:endCond)';
 
-save(strcat(foldersource,'Chapter3_July2020/',num2str(startCond),'matlab.mat'))
+save(strcat(foldersource,'Step2_ConvergenceProof/',num2str(startCond),'matlab.mat'))

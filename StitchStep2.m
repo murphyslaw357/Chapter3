@@ -19,4 +19,17 @@ end
 
 conductorInfoTotal=sortrows(conductorInfoTotal,'Index');
 conductorInfo = conductorInfoTotal;
-% save(strcat(rootFolder,'conductorInfoPoly.mat'),'conductorInfo')
+plot(conductorInfoTotal.convergeCurrent)
+types = unique(conductorInfoTotal.Type);
+for i = 1:size(types,1)
+    figure
+    subplot(3,1,1)
+    scatter(conductorInfoTotal(conductorInfoTotal.Type==types(i),:).DiamCompleteCable,conductorInfoTotal(conductorInfoTotal.Type==types(i),:).AllowableAmpacity)
+    title(string(types(i)))
+    subplot(3,1,2)
+    scatter(conductorInfoTotal(conductorInfoTotal.Type==types(i),:).Index,conductorInfoTotal(conductorInfoTotal.Type==types(i),:).convergeCurrent)%.*conductorInfoTotal(conductorInfoTotal.Type==types(i),:).AllowableAmpacity
+    subplot(3,1,3)
+    scatter(conductorInfoTotal(conductorInfoTotal.Type==types(i),:).DiamCompleteCable,conductorInfoTotal(conductorInfoTotal.Type==types(i),:).convergeCurrent)%.*conductorInfoTotal(conductorInfoTotal.Type==types(i),:).AllowableAmpacity
+end
+
+save(strcat(rootFolder,'conductorInfoStep2.mat'),'conductorInfo')
