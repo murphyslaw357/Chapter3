@@ -15,12 +15,11 @@ load(strcat(foldersource,'conductorInfoStep2_HighCurrentLowResolution.mat'))
 [conductorCount,~] = size(conductorInfo);
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
-
-cMax=conductorInfo.Cmax;
-cMin=conductorInfo.Cmin;
-subplot(2,1,1);
-plot(cMax,'linewidth',1)
-% ylim([0 1])
+plot(conductorInfo.guessErr_min)
+hold on
+plot(conductorInfo.guessErr_mean)
+plot(conductorInfo.guessErr_max)
+plot(conductorInfo.guessErr_std)
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');
@@ -29,39 +28,12 @@ line([175 175],yL,'LineStyle','--','Color','r');
 line([230 230],yL,'LineStyle','--','Color','r');
 line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
-
-legend('Maximum C')
 xlabel('Conductor Index')
-ylabel('Convergence Coefficient')
-% yticks([0 0.25 0.5 0.75 1])
-ax = gca;
-ax.YGrid = 'on';
-ax.GridLineStyle = '-';
-
-subplot(2,1,2); 
-plot(cMin,'linewidth',1)
-yL = get(gca,'YLim');
-line([68 68],yL,'LineStyle','--','Color','r');
-line([132 132],yL,'LineStyle','--','Color','r');
-line([161 161],yL,'LineStyle','--','Color','r');
-line([175 175],yL,'LineStyle','--','Color','r');
-line([230 230],yL,'LineStyle','--','Color','r');
-line([302 302],yL,'LineStyle','--','Color','r');
-line([339 339],yL,'LineStyle','--','Color','r');
-legend('Minimum C')
-xlabel('Conductor Index')
-ylabel('Convergence Coefficient')
-yticks([0 0.33e-3 0.66e-3 1e-3])
-ax = gca;
-ax.YGrid = 'on';
-ax.GridLineStyle = '-';
-
+ylabel('Error [°C]')
+legend('Min','Mean','Max','Std')
 set(gcf, 'Color', 'w');
 set(gca, 'FontName', 'Calibri')
 set(gca,'fontsize', 11)
-
-%savefig(strcat(foldersource,'Figure3_3.fig'))
-set(gcf, 'Color', 'w');
 
 % if(ispc)
 %     export_fig C:\Users\ctc\Documents\GitHub\Chapter3\Figure3_3.png -m3

@@ -32,7 +32,7 @@ load(strcat(foldersource,'conductorInfoStep2.mat'))
 convergeLimit=conductorInfo.convergeCurrent;
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
 plot(convergeLimit.*100,'linewidth',1)
-ylim([0 1])
+ylim([0 2])
 hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
