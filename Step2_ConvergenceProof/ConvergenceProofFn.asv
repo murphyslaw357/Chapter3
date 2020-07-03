@@ -72,8 +72,7 @@ for c=startCond:endCond
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
     polymodel=str2func(conductorInfo(c,:).polymodels);
     GuessTcs=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
-        alpha,beta,epsilons,psols,polymodel); 
-    output(:,1)=GuessTcs;
+        alpha,beta,epsilons,psols,polymodel);       
     for counter=1:weatherPermutationCount
         if(mod(counter,10000)==0)
             disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
@@ -82,10 +81,16 @@ for c=startCond:endCond
             continue;
         end
         GuessTc=GuessTcs(counter);
-
+%         if(GuessTc<=ambtemps(counter))
+%             if currents(counter)> conductorInfo(c,:).convergeCurrent
+%                 conductorInfo(c,:).convergeCurrent=currents(counter);
+%             end
+%             disp(strcat('Convergence current too low - guess less than Ta: ',num2str(currents(counter))))
+%         end
         [roott,~,~,~,~,~,~] = GetTempNewton(currents(counter)*...
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
             alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
+        output(counter,1)=GuessTc;
         output(counter,2)=roott;
         
 %         [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
