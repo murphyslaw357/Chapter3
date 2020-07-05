@@ -1,5 +1,9 @@
+clear
+clc
+close all
+
 if(ispc==1)
-    startCond = 215
+    startCond = 1
     endCond = 216
     foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
 elseif(ismac==1)
@@ -14,6 +18,7 @@ load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
 %% Load conductor info
+%load(strcat(foldersource,'\Step1_PolyTrain\1matlab.mat'))
 load(strcat(foldersource,'conductorInfoPoly.mat'))
 
 [conductorCount,~]=size(conductorInfo);
@@ -44,7 +49,7 @@ spacer=10;
 psols=0:maxpsol/spacer:maxpsol;
 winds=0:10/spacer:10;
 ambtemps=-33:98/spacer:65;
-currents=0.002:0.0005*10:0.01*20;
+currents=1.502:-0.01:0.002;
 inputCombo = allcomb(currents,psols,winds,ambtemps);
 currents=inputCombo(:,1);
 psols=inputCombo(:,2);
@@ -57,12 +62,8 @@ output = zeros(weatherPermutationCount,4);
 if endCond>conductorCount
     endCond=conductorCount;
 end
-%for c=1:conductorCount
 for c=startCond:endCond
     disp(c)
-    if(conductorInfo(c,:).polymodels==""||conductorInfo(c,:).simulated==1)
-        continue;
-    end
     cdata=conductorInfo(c,:);  
     
     maxcurrent=ceil(cdata.AllowableAmpacity);
@@ -70,22 +71,37 @@ for c=startCond:endCond
     beta=(cdata.ResistanceACHighdegcMeter-...
         cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
-    polymodel=str2func(conductorInfo(c,:).polymodels);
+    polymodel=str2func(cdata.polymodels);
     GuessTcs=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
-        alpha,beta,epsilons,psols,polymodel); 
+        alpha,beta,epsilons,alphas,psols,polymodel); 
     output(:,1)=GuessTcs;
+    I2Rs = zeros(weatherPermutationCount,1);
+    Prads = zeros(weatherPermutationCount,1);
+    Pcons = zeros(weatherPermutationCount,1);
+    cmin=zeros(weatherPermutationCount,1);
+    cmax=zeros(weatherPermutationCount,1);
+    tic
     for counter=1:weatherPermutationCount
-        if(mod(counter,10000)==0)
+        if(mod(counter,1000)==0)
+            toc
             disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
         end
+        %if(ispc && mod(counter,1000)==0)
+        %    toc
+        %    disp(strcat(num2str(100*counter/weatherPermutationCount),'%'))
+        %end
         if(currents(counter)<=conductorInfo(c,:).convergeCurrent)
             continue;
         end
+        
         GuessTc=GuessTcs(counter);
 
-        [roott,~,~,~,~,~,~] = GetTempNewton(currents(counter)*...
+        [roott,I2R,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*...
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
-            alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel);
+            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,polymodel);
+        I2Rs(counter)=I2R;
+        Prads(counter)=Prad;
+        Pcons(counter)=Pcon;
         output(counter,2)=roott;
         
 %         [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
@@ -106,8 +122,7 @@ for c=startCond:endCond
         while(rerun)
             rerun=0;
             reruncounter=reruncounter+1;
-            cmin=zeros(weatherPermutationCount,1);
-            cmax=zeros(weatherPermutationCount,1);
+
             if(reruncounter>5000)
                 msg='error condition: rerun counter exceeded limit';
                 error(msg)
@@ -121,7 +136,7 @@ for c=startCond:endCond
             [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,...
                 PconPrimePrime,~,~,~] =GetTempNewtonFirstIteration2(...
                 currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,...
-                winds(counter),alpha,beta,epsilons,psols(counter),...
+                winds(counter),alpha,beta,epsilons,alphas,psols(counter),...
                 temps,f,ff,ffinv);
 
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
@@ -132,9 +147,17 @@ for c=startCond:endCond
             
             searchRes=bigSearch(bigSearch(:,1)>=lilBottomEnd & ...
             bigSearch(:,1)<= lilTopEnd,:);
-            if(max(searchRes(:,2))>bigTopEnd || (min(searchRes(:,2))<bigBottomEnd && min(searchRes(:,2))>ambtemps(counter)))
-                msg='error condition: temp iteration excursion';
-                error(msg)
+            if(max(searchRes(:,2))>bigTopEnd)
+                bigTopEnd = max(searchRes(:,2))+10;
+                rerun=1;
+                %msg='error condition: temp iteration excursion';
+                %error(msg)
+            end
+            if(min(searchRes(:,2))<bigBottomEnd && min(searchRes(:,2))>ambtemps(counter))
+                bigBottomEnd = max([ambtemps(counter),min(searchRes(:,2))-10]);
+                rerun=1;
+                %msg='error condition: temp iteration excursion';
+                %error(msg)
             end
             if(min(searchRes(:,2))<=ambtemps(counter))
                 if currents(counter)> conductorInfo(c,:).convergeCurrent
@@ -161,13 +184,10 @@ for c=startCond:endCond
         end
         cmin(counter)=min(searchRes(:,3));
         cmax(counter)=max(searchRes(:,3));
-        if(ispc && mod(counter,1000)==0)
-            disp(strcat(num2str(100*counter/weatherPermutationCount),'%'))
-        end
 %         if(roott-ambtemps(counter) < conductorInfo(c,:).lowestRise)
 %             conductorInfo(c,:).lowestRise=roott-ambtemps(counter);
 %             disp(strcat('Minimum conductor rise updated: ',num2str(roott-ambtemps(counter))))
-%         end%
+%         end
     end
     conductorInfo(c,:).convergeCurrent=min(currents(currents>conductorInfo(c,:).convergeCurrent));
     output=output(currents>conductorInfo(c,:).convergeCurrent,:);

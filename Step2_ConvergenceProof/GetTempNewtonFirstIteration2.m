@@ -1,6 +1,6 @@
 function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,...
     PconPrime,PconPrimePrime,Gr,GrPrime,Nudf] = ...
-    GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,...
+    GetTempNewtonFirstIteration2(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,...
     Psol,GuessTc,fGrPr,fReNu,fNuRe)
     %% API
     %I - RMS steady-state load current - amps
@@ -127,7 +127,7 @@ function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,...
         disp(msg);
     end
     
-    Mismatch=I2R(i)+Psol*D-Prad(i)-Pcon(i);
+    Mismatch=I2R(i)+Psol*D*alphas-Prad(i)-Pcon(i);
     update=Mismatch/Hprime;
     GuessTcOutput(i)=GuessTcOutput(i)-update;  
     end
