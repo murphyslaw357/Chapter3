@@ -1,9 +1,8 @@
-clear
-clc
-close all
-
 if(ispc==1)
-    foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
+    splinesource='C:\Users\ctc\Documents\GitHub\Chapter3\';
+    foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\Step1_PolyTrain\';
+    startCond = 1
+    endCond = 2
 elseif(ismac==1)
     foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
@@ -11,110 +10,90 @@ elseif(isunix==1)
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/Step1_PolyTrain/';
     addpath(genpath(foldersource));
     startCond = str2num(getenv('SGE_TASK_ID'))
-    endCond = startCond + 1
+    if(isempty(startCond))
+        startCond=1
+        endCond=415
+    else
+        endCond = startCond + 1
+    end
 end
 
 load(strcat(splinesource,'GrPrSpline.mat'))
 load(strcat(splinesource,'ReNuSpline.mat'))
 load(strcat(splinesource,'NuReSpline.mat'))
 
-conductorData=importfile1(strcat(foldersource,'ConductorInfo.csv'));
-[conductorCount,~]=size(conductorData);
+conductorInfo=importfile1(strcat(foldersource,'ConductorInfo.csv'));
+[conductorCount,~]=size(conductorInfo);
 
-conductorData.ResistanceACLowdegc=conductorData.ResistanceDCLowdegc;
-conductorData.ResistanceACLowdegcMeter=conductorData.ResistanceACLowdegc./conductorData.MetersperResistanceInterval;
-conductorData.ResistanceACHighdegcMeter=conductorData.ResistanceACHighdegc./conductorData.MetersperResistanceInterval;
-conductorData.simulated=zeros(conductorCount,1);
-conductorData.polymodels = strings(conductorCount,1); 
-conductorData.polyorder = zeros(conductorCount,1); 
-Tref=25;
+conductorInfo.ResistanceACLowdegc=conductorInfo.ResistanceDCLowdegc;
+conductorInfo.ResistanceACLowdegcMeter=conductorInfo.ResistanceACLowdegc./conductorInfo.MetersperResistanceInterval;
+conductorInfo.ResistanceACHighdegcMeter=conductorInfo.ResistanceACHighdegc./conductorInfo.MetersperResistanceInterval;
+conductorInfo.simulated=zeros(conductorCount,1);
+conductorInfo.polymodels = strings(conductorCount,1); 
+conductorInfo.polyorder = zeros(conductorCount,1); 
+% Tref=25;
+% sigmab=5.6697e-8;
+% searchIncrement=0.1;
 epsilons=0.9;
 H=0;
 phi=pi/2;
-sigmab=5.6697e-8;
 maxpsol=1050;
 alphas=0.9;
 spacer=15;
-searchIncrement=0.1;
-weatherPermutationCount=(spacer+1)^4;
 
-psols=zeros(weatherPermutationCount,1);
-winds=zeros(weatherPermutationCount,1);
-ambtemps=zeros(weatherPermutationCount,1);
-currents=zeros(weatherPermutationCount,1);
-% hs=zeros(weatherPermutationCount,1);
-% hprimes=zeros(weatherPermutationCount,1);
-% pconprimeprimes=zeros(weatherPermutationCount,1);
-% pradprimeprimes=zeros(weatherPermutationCount,1);
-% initguess=zeros(weatherPermutationCount,1);
-% pconas=zeros(weatherPermutationCount,1);
-% pconbs=zeros(weatherPermutationCount,1);
-% pconrs=zeros(weatherPermutationCount,1);
-% pradas=zeros(weatherPermutationCount,1);
-% pradbs=zeros(weatherPermutationCount,1);
-% pradrs=zeros(weatherPermutationCount,1);
-% bestpoly=zeros(conductorCount,1);
-counter=0;
-
-for imagnitude=0.01:(0.5)/spacer:0.51
-    for psol=0:maxpsol/spacer:maxpsol
-        for ambtemp=-33:98/spacer:65
-            for Vw=0:10/spacer:10
-                counter=counter+1;
-                psols(counter)=psol*alphas;
-                winds(counter)=Vw;
-                ambtemps(counter)=ambtemp;
-                currents(counter)=imagnitude;
-            end
-        end
-    end
-end
-
-% convergeCurrents=zeros(conductorCount,1);
-% deltainfo=zeros(weatherPermutationCount,conductorCount);
-% delta1info=zeros(weatherPermutationCount,conductorCount);
-% rootinfo=zeros(weatherPermutationCount,conductorCount);
-% cinfo=zeros(weatherPermutationCount,conductorCount);
-% stepinfo=zeros(weatherPermutationCount,conductorCount);
+psols=0:maxpsol/spacer:maxpsol;
+winds=0:10/spacer:10;
+ambtemps=-33:98/spacer:65;
+currents=1.502:-0.01:0.002;
+inputCombo = allcomb(currents,psols,winds,ambtemps);
+currents=inputCombo(:,1);
+psols=inputCombo(:,2);
+winds=inputCombo(:,3);
+ambtemps=inputCombo(:,4);
+weatherPermutationCount = size(inputCombo,1);
+fitData=zeros(endCond,39);
 
 if endCond>conductorCount
     endCond=conductorCount;
 end
 for c=startCond:endCond
     disp(c)
-    cdata=conductorData(c,:);
-
-    root=realmax.*ones(weatherPermutationCount,1);
-    delta=zeros(weatherPermutationCount,1);
-    delta1=zeros(weatherPermutationCount,1);
-    prads=zeros(weatherPermutationCount,1);
-    pcons=zeros(weatherPermutationCount,1);
-    pir2s=zeros(weatherPermutationCount,1);
-    cs=zeros(weatherPermutationCount,1);
-
+    
+    cdata=conductorInfo(c,:);
     maxcurrent=ceil(cdata.AllowableAmpacity);
     diam=cdata.DiamCompleteCable*0.0254;
     beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for counter=1:weatherPermutationCount
-        [roott,~,~,~] = GetTempIEEEBisection(currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,psols(counter),f,ff,ffinv);
-        root(counter)=roott;         
-        if root==ambtemps(counter)
-            error('error with bisection method: Tc = Ta')
-        end
-    end
-    x=[(((currents.*maxcurrent).^2)).*alpha,(((currents.*maxcurrent).^2)).*beta,psols.*diam,ambtemps,1./(winds+1),(1./(winds+1)).^2];
+    %for counter=1:weatherPermutationCount
+    [rootts] = GetTempIEEEBisection(currents.*maxcurrent,ambtemps,H,diam,phi,winds,alpha,beta,epsilons,alphas,psols,f,ff,ffinv);
+    %    root(counter)=roott;         
+    %    if root(counter)==ambtemps(counter)
+    %        error('error with bisection method: Tc = Ta')
+    %    end
+    %end
+    x=[(((currents.*maxcurrent).^2)).*alpha,(((currents.*maxcurrent).^2)).*beta,psols.*diam.*alphas,ambtemps,1./(winds+1),(1./(winds+1)).^2];
     err=realmax;
     %i=5;
-    for i=1:7
-        mdl=MultiPolyRegress(x,root-ambtemps,i);
+    for i=1:6
+        mdl=MultiPolyRegress(x,rootts-ambtemps,i);
         if(mdl.CVMAE<err)
             err=mdl.CVMAE;
-            conductorData(c,:).polyorder=i;
-            conductorData(c,:).polymodels=func2str(mdl.PolynomialExpression);
+            conductorInfo(c,:).polyorder=i;
+            conductorInfo(c,:).polymodels=func2str(mdl.PolynomialExpression);
         end
+        fitData(c,(i-1)*5+1)=min(mdl.Residuals);
+        fitData(c,(i-1)*5+2)=max(mdl.Residuals);
+        fitData(c,(i-1)*5+3)=mean(mdl.Residuals);
+        fitData(c,(i-1)*5+4)=std(mdl.Residuals);
+        fitData(c,(i-1)*5+5)=mdl.CVMAE;
     end
+    fitData(c,36)=min(rootts);
+    fitData(c,37)=max(rootts);
+    fitData(c,38)=mean(rootts);
+    fitData(c,39)=std(rootts);
 end
+conductorInfo = conductorInfo(startCond:endCond,:);
+conductorInfo.Index = (startCond:endCond)';
 disp(strcat(foldersource,num2str(startCond),'matlab.mat'))
-save(strcat(foldersource,num2str(startCond),'matlab.mat'),'conductorData')
+save(strcat(foldersource,num2str(startCond),'matlab.mat'),'conductorInfo')

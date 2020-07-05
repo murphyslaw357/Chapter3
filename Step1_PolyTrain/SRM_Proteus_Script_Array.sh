@@ -6,7 +6,7 @@
 #$ -cwd
 #$ -P nieburPrj
 #$ -pe shm 16
-#$ -l h_rt=10:00:00
+#$ -l h_rt=8:00:00
 #$ -l h_vmem=4G
 #$ -l matlab=1
 
@@ -15,6 +15,6 @@ module load shared
 module load sge/univa
 module load proteus
 module load matlab
-cd '/mnt/HA/groups/nieburGrp/Shaun/Chapter3_June2020/'
+cd '/mnt/HA/groups/nieburGrp/Shaun/Chapter3/Step1_PolyTrain'
 
 matlab -nodisplay -nodesktop -nosplash -noFigureWindows -r "run ConvergenceProofTrainPolyModelFn.m"
