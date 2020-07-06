@@ -19,7 +19,7 @@ end
 
 conductorInfoTotal=sortrows(conductorInfoTotal,'Index');
 conductorInfo = conductorInfoTotal;
-plot(conductorInfoTotal.convergeCurrent)
+plot(conductorInfoTotal.Index,conductorInfoTotal.convergeCurrent)
 types = unique(conductorInfoTotal.Type);
 for i = 1:size(types,1)
     figure
