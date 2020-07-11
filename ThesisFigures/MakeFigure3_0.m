@@ -11,15 +11,15 @@ elseif(isunix==1)
 end
 
 % conductorData=importfile46(strcat(foldersource,'conductorDataResults.csv'));
-load(strcat(foldersource,'conductorInfoStep2_HighCurrentLowResolution.mat'))
+load(strcat(foldersource,'conductorInfoStep2.mat'))
 [conductorCount,~] = size(conductorInfo);
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
-plot(conductorInfo.guessErr_min)
+plot(conductorInfo.guessMIN)
 hold on
-plot(conductorInfo.guessErr_mean)
-plot(conductorInfo.guessErr_max)
-plot(conductorInfo.guessErr_std)
+plot(conductorInfo.guessMEAN)
+plot(conductorInfo.guessMAX)
+plot(conductorInfo.guessSTD)
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');

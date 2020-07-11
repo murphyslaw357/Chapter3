@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,fGrPr,fReNu,fNuRe,mdl)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,fGrPr,fReNu,fNuRe,GuessTc)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -11,7 +11,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     sigmab=5.6697e-8;
     g=9.805;
     
-    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,mdl);
+    %[GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,mdl);
     Tolerance=1e-5; %tolerance criteria for Newton's method
     update=realmax;
     TfilmkPrime=1/2;

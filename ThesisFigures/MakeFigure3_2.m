@@ -27,7 +27,7 @@ end
 % 
 % conductorDataTotal=sortrows(conductorDataTotal,'Index');
 
-load(strcat(foldersource,'conductorInfoStep2_LowCurrentHighResolution.mat'))
+load(strcat(foldersource,'conductorInfoStep2.mat'))
 [conductorCount,~] = size(conductorInfo);
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);

@@ -3,14 +3,14 @@ clc
 close all
 
 if(ispc==1)
-    startCond = 1
-    endCond = 216
+    startCond = 132
+    endCond = 132
     foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
 elseif(ismac==1)
     foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
     startCond = str2num(getenv('SGE_TASK_ID'))
-    endCond = startCond + 1
+    endCond = startCond
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
@@ -18,7 +18,6 @@ load(strcat(foldersource,'GrPrSpline.mat'))
 load(strcat(foldersource,'ReNuSpline.mat'))
 load(strcat(foldersource,'NuReSpline.mat'))
 %% Load conductor info
-%load(strcat(foldersource,'\Step1_PolyTrain\1matlab.mat'))
 load(strcat(foldersource,'conductorInfoPoly.mat'))
 
 [conductorCount,~]=size(conductorInfo);
@@ -38,6 +37,10 @@ conductorInfo.lowestRise = realmax.*ones(conductorCount,1);
 conductorInfo.lilBottomEnd = zeros(conductorCount,1);
 conductorInfo.lilTopEnd = zeros(conductorCount,1);
 conductorInfo.guessMAPE = zeros(conductorCount,1);
+conductorInfo.guessMIN = zeros(conductorCount,1);
+conductorInfo.guessMAX = zeros(conductorCount,1);
+conductorInfo.guessMEAN = zeros(conductorCount,1);
+conductorInfo.guessSTD = zeros(conductorCount,1);
 %% Setup weather data
 epsilons=0.9;
 H=0;
@@ -49,7 +52,7 @@ spacer=10;
 psols=0:maxpsol/spacer:maxpsol;
 winds=0:10/spacer:10;
 ambtemps=-33:98/spacer:65;
-currents=1.502:-0.01:0.002;
+currents=[1.5:-0.01:0.02, 0.019:-0.001:0.002];
 inputCombo = allcomb(currents,psols,winds,ambtemps);
 currents=inputCombo(:,1);
 psols=inputCombo(:,2);
@@ -57,7 +60,7 @@ winds=inputCombo(:,3);
 ambtemps=inputCombo(:,4);
 
 weatherPermutationCount = size(inputCombo,1);
-output = zeros(weatherPermutationCount,4);
+
 %% Run conductor simulation 
 if endCond>conductorCount
     endCond=conductorCount;
@@ -65,7 +68,7 @@ end
 for c=startCond:endCond
     disp(c)
     cdata=conductorInfo(c,:);  
-    
+    output = zeros(weatherPermutationCount,4);
     maxcurrent=ceil(cdata.AllowableAmpacity);
     diam=cdata.DiamCompleteCable*0.0254;
     beta=(cdata.ResistanceACHighdegcMeter-...
@@ -74,6 +77,16 @@ for c=startCond:endCond
     polymodel=str2func(cdata.polymodels);
     GuessTcs=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
         alpha,beta,epsilons,alphas,psols,polymodel); 
+    if(any(c==[75,111,113,190,254,257,262,288]))
+        polymodel1=str2func(conductorInfo(c-1,:).polymodels);
+        GuessTcs1=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
+            alpha,beta,epsilons,alphas,psols,polymodel1);
+        polymodel2=str2func(conductorInfo(c+1,:).polymodels);
+        GuessTcs2=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
+            alpha,beta,epsilons,alphas,psols,polymodel2);
+        GuessTcs=(GuessTcs1+GuessTcs2)./2;
+        disp('avg_fn')
+    end
     output(:,1)=GuessTcs;
     I2Rs = zeros(weatherPermutationCount,1);
     Prads = zeros(weatherPermutationCount,1);
@@ -82,14 +95,10 @@ for c=startCond:endCond
     cmax=zeros(weatherPermutationCount,1);
     tic
     for counter=1:weatherPermutationCount
-        if(mod(counter,1000)==0)
+        if(mod(counter,10000)==0)
             toc
             disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
         end
-        %if(ispc && mod(counter,1000)==0)
-        %    toc
-        %    disp(strcat(num2str(100*counter/weatherPermutationCount),'%'))
-        %end
         if(currents(counter)<=conductorInfo(c,:).convergeCurrent)
             continue;
         end
@@ -98,19 +107,19 @@ for c=startCond:endCond
 
         [roott,I2R,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*...
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
-            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,polymodel);
+            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,GuessTc);
         I2Rs(counter)=I2R;
         Prads(counter)=Prad;
         Pcons(counter)=Pcon;
         output(counter,2)=roott;
         
-%         [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
-%             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
-%             alpha,beta,epsilons,psols(counter),f,ff,ffinv,polymodel,roott);
-% 
-%         if(convergenceOrder<conductorInfo(c,:).convergenceOrder)
-%             conductorInfo(c,:).convergenceOrder=convergenceOrder;
-%         end
+        [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
+            maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
+            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,GuessTc,roott);
+ 
+        if(convergenceOrder<conductorInfo(c,:).convergenceOrder)
+            conductorInfo(c,:).convergenceOrder=convergenceOrder;
+        end
         
         lilTopEnd=max(roott,GuessTc)+0.05;
         lilBottomEnd=min(roott,GuessTc);
@@ -192,9 +201,15 @@ for c=startCond:endCond
     conductorInfo(c,:).convergeCurrent=min(currents(currents>conductorInfo(c,:).convergeCurrent));
     output=output(currents>conductorInfo(c,:).convergeCurrent,:);
     output(:,3)=output(:,2)-ambtemps(currents>conductorInfo(c,:).convergeCurrent);
+    guessErr = output(:,2)-output(:,1);
     output(:,4)=(output(:,2)-output(:,1))./output(:,2);
     
+    conductorInfo(c,:).guessMIN=min(guessErr);
+    conductorInfo(c,:).guessMAX=max(guessErr);
+    conductorInfo(c,:).guessMEAN=mean(guessErr);
+    conductorInfo(c,:).guessSTD=std(guessErr);
     conductorInfo(c,:).guessMAPE=mean(abs(output(:,4)));
+    
     conductorInfo(c,:).lowestRise=min(output(output(:,3)~=0,3));
     conductorInfo(c,:).Cmax=max(cmax(currents>conductorInfo(c,:).convergeCurrent));
     conductorInfo(c,:).Cmin=min(cmin(cmin~=0 & currents>conductorInfo(c,:).convergeCurrent));

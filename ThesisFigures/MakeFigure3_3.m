@@ -11,7 +11,7 @@ elseif(isunix==1)
 end
 
 % conductorData=importfile46(strcat(foldersource,'conductorDataResults.csv'));
-load(strcat(foldersource,'conductorInfoStep2_HighCurrentLowResolution.mat'))
+load(strcat(foldersource,'conductorInfoStep2.mat'))
 [conductorCount,~] = size(conductorInfo);
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);

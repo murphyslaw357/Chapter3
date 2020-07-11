@@ -1,4 +1,4 @@
-function [convergenceOrder] =GetTempNewtonGetCC(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,Psol,fGrPr,fReNu,fNuRe,mdl,roott)
+function [convergenceOrder] =GetTempNewtonGetCC(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,fGrPr,fReNu,fNuRe,GuessTc,roott)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -12,8 +12,8 @@ function [convergenceOrder] =GetTempNewtonGetCC(I,Ta,H,D,phi,Vw,alpha,beta,epsil
     g=9.805;
     convergenceOrder=realmax;
     
-    [GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl);
-    GuessTc2=GuessTc;
+    %[GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,Psol,mdl);
+%     GuessTc2=GuessTc;
     Tolerance=1e-5; %tolerance criteria for Newton's method
     update=realmax;
     TfilmkPrime=1/2;
@@ -22,7 +22,7 @@ function [convergenceOrder] =GetTempNewtonGetCC(I,Ta,H,D,phi,Vw,alpha,beta,epsil
 
     IIstar=abs(I)^2;
     I2Rprime=beta*IIstar;
-
+    GuessTcs=GuessTc;
     while(abs(update)>Tolerance)
         counter=counter+1;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%RADIATIVE COOLING/HEATING%%%%%%%%%%%
@@ -96,20 +96,41 @@ function [convergenceOrder] =GetTempNewtonGetCC(I,Ta,H,D,phi,Vw,alpha,beta,epsil
             error(msg);
         end
         
-        Mismatch=I2R+Psol*D-Prad-Pcon;
+        Mismatch=I2R+Psol*D*alphas-Prad-Pcon;
         update=Mismatch/Hprime;
-
+        if(counter>3)
+            %enminus2=enminus1;
+            GuessTcMinus3=GuessTcMinus2;
+        end
+        if(counter>2)
+            enminus2=enminus1;
+            GuessTcMinus2=GuessTcMinus1;
+        end
         if(counter>1)
-            LastGuessTc=GuessTc;
-        end         
-        GuessTc=GuessTc-update; 
+            enminus1=en;
+            GuessTcMinus1=GuessTc;
+        end
 
-        if(counter > 1)
-            order=log(abs(GuessTc-roott))/log(abs(LastGuessTc-roott));
-            if(order<convergenceOrder)
-                convergenceOrder=order;
+        GuessTc=GuessTc-update; 
+        GuessTcs=[GuessTcs;GuessTc];
+        en=GuessTc-roott;
+        if(counter>1)
+            if(abs(en)>(enminus1^2))
+                error('doh')
             end
         end
+%         if(counter > 3)
+%             %order=log(abs(GuessTc-roott))/log(abs(LastGuessTc-roott));
+%             order=log(abs((GuessTc-GuessTcMinus1)/(GuessTcMinus1-GuessTcMinus2)))/...
+%                 log(abs((GuessTcMinus1-GuessTcMinus2)/(GuessTcMinus2-GuessTcMinus3)));
+%             if(order<2)
+%                 error('doh')
+%             end
+%             %order=log(en/enminus1)/log(enminus1/enminus2);
+%             if(order<convergenceOrder)
+%                 convergenceOrder=order;
+%             end
+%         end
         if(counter>=5000)
             GuessTc=nan;
             break;
