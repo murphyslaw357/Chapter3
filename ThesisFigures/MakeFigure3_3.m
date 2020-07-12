@@ -30,7 +30,7 @@ line([230 230],yL,'LineStyle','--','Color','r');
 line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
 
-legend('Maximum C')
+legend('Maximum c')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
 % yticks([0 0.25 0.5 0.75 1])
@@ -48,7 +48,7 @@ line([175 175],yL,'LineStyle','--','Color','r');
 line([230 230],yL,'LineStyle','--','Color','r');
 line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
-legend('Minimum C')
+legend('Minimum c')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
 yticks([0 0.33e-3 0.66e-3 1e-3])
