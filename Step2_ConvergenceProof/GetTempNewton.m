@@ -1,4 +1,4 @@
-function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,fGrPr,fReNu,fNuRe,GuessTc)
+function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,GrPr,A,m,Nueff,Cinv,ninv,Reeff,C,n] =GetTempNewton(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,GuessTc)
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
     %H - conductor elevation - meters
@@ -10,9 +10,16 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
     counter=0;
     sigmab=5.6697e-8;
     g=9.805;
+    gplim1=1e-10;
+    gplim2=1e-4;
+    gplim3=1e-1;
+    gplim4=1e2;
+    gplim5=1e4;
+    gplim6=1e7;
+    gplim7=1e12;
     
     %[GuessTc]=GetGuessTemp(I,Ta,D,phi,Vw,alpha,beta,epsilons,alphas,Psol,mdl);
-    Tolerance=1e-5; %tolerance criteria for Newton's method
+    Tolerance=1e-6; %tolerance criteria for Newton's method
     update=realmax;
     TfilmkPrime=1/2;
     PrPrime=-1.25e-4;
@@ -47,45 +54,120 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime] =GetTempNewton(I,T
         Pr=0.715-(2.5e-4)*GuessTfilm;
         GrPr=Gr*Pr;
         %Natural convection
-        Nudf=fGrPr(GrPr);
+        if(counter==1)
+            if(GrPr>gplim1 && GrPr<=gplim2)
+                A=0.675;
+                m=0.058;
+            elseif(GrPr>gplim2 && GrPr<=gplim3)
+                    A=0.889;
+                    m=0.088;
+            elseif(GrPr>gplim3 && GrPr<=gplim4)
+                    A=1.02;
+                    m=0.148;
+            elseif(GrPr>gplim4 && GrPr<=gplim5)
+                    A=0.85;
+                    m=0.188;
+            elseif(GrPr>gplim5 && GrPr<=gplim6)
+                    A=0.48;
+                    m=0.25;
+            elseif(GrPr>gplim6 && GrPr<=gplim7)
+                    A=0.125;
+                    m=0.333;
+            end
+        end
+        Nun=A*GrPr^m;
         %%
-        NudfPrimedgrpr=differentiate(fGrPr,GrPr);
+        NudfPrimedgrpr=m*A*GrPr^(m-1);
         NudfPrimedtc=NudfPrimedgrpr.*(Gr.*PrPrime+GrPrime.*Pr);
     
         %Mixed convection
         Re=(sin(phi)*Vw*D)./vf;  
         RePrimedtc=-((sin(phi)*Vw*D).*vfPrime)./(vf.^2);
-        Req=fNuRe(Nudf);
-        ReqPrimednudf=differentiate(fNuRe,Nudf);
-        ReqPrimedtc=ReqPrimednudf.*NudfPrimedtc;
-        Reeff=sqrt((Re.^2)+(Req.^2));
-        Top=Re.*RePrimedtc+Req.*ReqPrimedtc;
+        if(counter==1)
+            if(Nun>0.1916 && Nun<=0.2666)
+                Cinv=0.437;
+                ninv=0.0895;
+            elseif(Nun>0.2666 && Nun<=0.40685)
+               Cinv=0.565;
+               ninv=0.136;
+            elseif(Nun>0.40685 && Nun<=0.8136)
+               Cinv=0.8;
+               ninv=0.28;
+            elseif(Nun>0.8136 && Nun<=3.1253)
+               Cinv=0.795;
+               ninv=0.384;
+            elseif(Nun>3.1253 && Nun<=31.45)
+               Cinv=0.583;
+               ninv=0.471;
+            elseif(Nun>31.45 && Nun<=141.449)
+               Cinv=0.148;
+               ninv=0.633;
+            elseif(Nun>141.449 && Nun<=429.6371)
+               Cinv=0.0208;
+               ninv=0.814;
+            else
+                error('out of bounds')
+            end
+        end
+        
+        Ren=(Nun/Cinv)^(1/ninv);
+        RenPrimednudf=(1/ninv)*(Nun/Cinv)^(1/ninv-1);      %differentiate(fNuRe,Nudf);
+        RenPrimedtc=RenPrimednudf.*NudfPrimedtc;
+        Reeff=sqrt((Re.^2)+(Ren.^2));
+        Top=Re.*RePrimedtc+Ren.*RenPrimedtc;
         ReeffPrimedtc=Top./Reeff;
-        Nueff=fReNu(Reeff);
-        NueffPrimedreeff=differentiate(fReNu,Reeff);
+        if(counter==1)
+            if(Reeff>1e-4 && Reeff<=4e-3)
+                C=0.437;
+                n=0.0895;
+            elseif(Reeff>4e-3 && Reeff<=9e-2)
+               C=0.565;
+               n=0.136;
+            elseif(Reeff>9e-2 && Reeff<=1)
+               C=0.8;
+               n=0.28;
+            elseif(Reeff>1 && Reeff<=35)
+               C=0.795;
+               n=0.384;
+            elseif(Reeff>35 && Reeff<=5e3)
+               C=0.583;
+               n=0.471;
+            elseif(Reeff>5e3 && Reeff<=5e4)
+               C=0.148;
+               n=0.633;
+            elseif(Reeff>5e4 && Reeff<2e5)
+               C=0.0208;
+               n=0.814;
+            end
+        end
+        Nueff=C*(Reeff^n);
+            
+            
+%         Nueff=fReNu(Reeff);
+        NueffPrimedreeff=n*C*(Reeff^(n-1));       %differentiate(fReNu,Reeff);
         NueffPrimedtc=NueffPrimedreeff.*ReeffPrimedtc;
         
         %Forced convection
-        Nu=fReNu(Re);  
-        NuPrimedre=differentiate(fReNu,Re);
-        NuPrimedtc=NuPrimedre.*RePrimedtc;
+%         Nu=fReNu(Re);  
+%         NuPrimedre=differentiate(fReNu,Re);
+%         NuPrimedtc=NuPrimedre.*RePrimedtc;
 %         [row,~]=size(GuessTc);
 %         Pcon=zeros(row,1);
 %         PconPrime=zeros(row,1);
         
-        if(Vw==0)
-            %pure natural convection         
-            Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
-            PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf));
-        elseif(round(GuessTc,4)~=round(Ta,4))
+%         if(Vw==0)
+%             %pure natural convection         
+%             Pcon=pi*Nudf*Lambdaf*(GuessTc-Ta);
+%             PconPrime=pi*(Nudf*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nudf+NudfPrimedtc*Lambdaf));
+%         elseif(round(GuessTc,4)~=round(Ta,4))
             %mixed convection
             Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
             PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nueff+NueffPrimedtc*Lambdaf));
-        else
-            %pure forced    
-            Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
-            PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrimedtc*Lambdaf));
-        end
+%         else
+%             %pure forced    
+%             Pcon=pi*Nu*Lambdaf*(GuessTc-Ta);
+%             PconPrime=pi*(Nu*Lambdaf+(GuessTc-Ta)*(LambdafPrime*Nu+NuPrimedtc*Lambdaf));
+%         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%MISMATCH AND UPDATE%%%%%%%%%%%%%%
         Hprime=I2Rprime-PradPrime-PconPrime;

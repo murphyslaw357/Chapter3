@@ -18,10 +18,6 @@ elseif(isunix==1)
     end
 end
 
-load(strcat(splinesource,'GrPrSpline.mat'))
-load(strcat(splinesource,'ReNuSpline.mat'))
-load(strcat(splinesource,'NuReSpline.mat'))
-
 conductorInfo=importfile1(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorInfo);
 
@@ -31,9 +27,7 @@ conductorInfo.ResistanceACHighdegcMeter=conductorInfo.ResistanceACHighdegc./cond
 conductorInfo.simulated=zeros(conductorCount,1);
 conductorInfo.polymodels = strings(conductorCount,1); 
 conductorInfo.polyorder = zeros(conductorCount,1); 
-% Tref=25;
-% sigmab=5.6697e-8;
-% searchIncrement=0.1;
+
 epsilons=0.9;
 H=0;
 phi=pi/2;
@@ -58,20 +52,20 @@ if endCond>conductorCount
 end
 for c=startCond:endCond
     disp(c)
-    
     cdata=conductorInfo(c,:);
     maxcurrent=ceil(cdata.AllowableAmpacity);
     diam=cdata.DiamCompleteCable*0.0254;
     beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
+    rootts=zeros(weatherPermuationCount,1);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %for counter=1:weatherPermutationCount
-    [rootts] = GetTempIEEEBisection(currents.*maxcurrent,ambtemps,H,diam,phi,winds,alpha,beta,epsilons,alphas,psols,f,ff,ffinv);
-    %    root(counter)=roott;         
+    for counter=1:weatherPermutationCount
+        [roott] = GetTempMorgan(currents.*maxcurrent,ambtemps,H,diam,phi,winds,alpha,beta,epsilons,alphas,psols,f,ff,ffinv);
+        rootts(counter)=roott;         
     %    if root(counter)==ambtemps(counter)
     %        error('error with bisection method: Tc = Ta')
     %    end
-    %end
+    end
     x=[(((currents.*maxcurrent).^2)).*alpha,(((currents.*maxcurrent).^2)).*beta,psols.*diam.*alphas,ambtemps,1./(winds+1),(1./(winds+1)).^2];
     err=realmax;
     %i=5;

@@ -14,9 +14,9 @@ elseif(isunix==1)
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
-load(strcat(foldersource,'GrPrSpline.mat'))
-load(strcat(foldersource,'ReNuSpline.mat'))
-load(strcat(foldersource,'NuReSpline.mat'))
+% load(strcat(foldersource,'GrPrSpline.mat'))
+% load(strcat(foldersource,'ReNuSpline.mat'))
+% load(strcat(foldersource,'NuReSpline.mat'))
 %% Load conductor info
 load(strcat(foldersource,'conductorInfoPoly.mat'))
 
@@ -68,7 +68,7 @@ end
 for c=startCond:endCond
     disp(c)
     cdata=conductorInfo(c,:);  
-    output = zeros(weatherPermutationCount,4);
+    output = ones(weatherPermutationCount,5);
     maxcurrent=ceil(cdata.AllowableAmpacity);
     diam=cdata.DiamCompleteCable*0.0254;
     beta=(cdata.ResistanceACHighdegcMeter-...
@@ -99,27 +99,27 @@ for c=startCond:endCond
             toc
             disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
         end
-        if(currents(counter)<=conductorInfo(c,:).convergeCurrent)
-            continue;
-        end
+%         if(currents(counter)<=conductorInfo(c,:).convergeCurrent)
+%             continue;
+%         end
         
         GuessTc=GuessTcs(counter);
 
         [roott,I2R,~,Prad,~,Pcon,~] = GetTempNewton(currents(counter)*...
             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
-            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,GuessTc);
+            alpha,beta,epsilons,alphas,psols(counter),GuessTc);
         I2Rs(counter)=I2R;
         Prads(counter)=Prad;
         Pcons(counter)=Pcon;
         output(counter,2)=roott;
         
-        [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
-            maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
-            alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,GuessTc,roott);
+%         [convergenceOrder] = GetTempNewtonGetCC(currents(counter)*...
+%             maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),...
+%             alpha,beta,epsilons,alphas,psols(counter),f,ff,ffinv,GuessTc,roott);
  
-        if(convergenceOrder<conductorInfo(c,:).convergenceOrder)
-            conductorInfo(c,:).convergenceOrder=convergenceOrder;
-        end
+%         if(convergenceOrder<conductorInfo(c,:).convergenceOrder)
+%             conductorInfo(c,:).convergenceOrder=convergenceOrder;
+%         end
         
         lilTopEnd=max(roott,GuessTc)+0.05;
         lilBottomEnd=min(roott,GuessTc);
@@ -141,13 +141,24 @@ for c=startCond:endCond
             temps=[(bigBottomEnd:searchIncrement:bigTopEnd)'; lilTopEnd; lilBottomEnd];
             temps(temps<=ambtemps(counter))=[];
             searchCount=size(temps,1);
-
-            [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,...
-                PconPrimePrime,~,~,~] =GetTempNewtonFirstIteration2(...
-                currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,...
-                winds(counter),alpha,beta,epsilons,alphas,psols(counter),...
-                temps,f,ff,ffinv);
-
+            
+            Tc=zeros(searchCount,1);
+            I2R=zeros(searchCount,1);
+            I2Rprime=zeros(searchCount,1);
+            Prad=zeros(searchCount,1);
+            PradPrime=zeros(searchCount,1);
+            PradPrimePrime=zeros(searchCount,1);
+            Pcon=zeros(searchCount,1);
+            PconPrime=zeros(searchCount,1);
+            PconPrimePrime=zeros(searchCount,1);
+            
+            for i =1:searchCount
+                [Tc(i),I2R(i),I2Rprime(i),Prad(i),PradPrime(i),PradPrimePrime(i),Pcon(i),PconPrime(i),...
+                    PconPrimePrime(i),~,~,~] =GetTempNewtonFirstIteration2(...
+                    currents(counter)*maxcurrent,ambtemps(counter),H,diam,phi,...
+                    winds(counter),alpha,beta,epsilons,alphas,psols(counter),...
+                    temps(i));
+            end
             h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
             hprime=I2Rprime-PconPrime-PradPrime;
             hprimeprime=-1*PconPrimePrime-PradPrimePrime;
@@ -169,9 +180,10 @@ for c=startCond:endCond
                 %error(msg)
             end
             if(min(searchRes(:,2))<=ambtemps(counter))
-                if currents(counter)> conductorInfo(c,:).convergeCurrent
-                    conductorInfo(c,:).convergeCurrent=currents(counter);
-                end
+%                 if currents(counter)> conductorInfo(c,:).convergeCurrent
+%                     conductorInfo(c,:).convergeCurrent=currents(counter);
+%                 end
+                output(counter,5)=0;
                 disp(strcat('Convergence current too low - update to less than Ta: ',num2str(currents(counter))))
                 break
             end
@@ -184,9 +196,10 @@ for c=startCond:endCond
                 rerun=1;
             end
             if(max(searchRes(:,3))>1)
-                if currents(counter)> conductorInfo(c,:).convergeCurrent
-                    conductorInfo(c,:).convergeCurrent=currents(counter);
-                end
+%                 if currents(counter)> conductorInfo(c,:).convergeCurrent
+%                     conductorInfo(c,:).convergeCurrent=currents(counter);
+%                 end
+                output(counter,5)=0;
                 disp(strcat('Convergence current too low - based on |c|: ',num2str(currents(counter))))
                 break
             end
@@ -198,24 +211,27 @@ for c=startCond:endCond
 %             disp(strcat('Minimum conductor rise updated: ',num2str(roott-ambtemps(counter))))
 %         end
     end
-    conductorInfo(c,:).convergeCurrent=min(currents(currents>conductorInfo(c,:).convergeCurrent));
-    output=output(currents>conductorInfo(c,:).convergeCurrent,:);
-    output(:,3)=output(:,2)-ambtemps(currents>conductorInfo(c,:).convergeCurrent);
-    guessErr = output(:,2)-output(:,1);
-    output(:,4)=(output(:,2)-output(:,1))./output(:,2);
-    
-    conductorInfo(c,:).guessMIN=min(guessErr);
-    conductorInfo(c,:).guessMAX=max(guessErr);
-    conductorInfo(c,:).guessMEAN=mean(guessErr);
-    conductorInfo(c,:).guessSTD=std(guessErr);
-    conductorInfo(c,:).guessMAPE=mean(abs(output(:,4)));
-    
-    conductorInfo(c,:).lowestRise=min(output(output(:,3)~=0,3));
-    conductorInfo(c,:).Cmax=max(cmax(currents>conductorInfo(c,:).convergeCurrent));
-    conductorInfo(c,:).Cmin=min(cmin(cmin~=0 & currents>conductorInfo(c,:).convergeCurrent));
-    conductorInfo(c,:).simulated=1;
+%     conductorInfo(c,:).convergeCurrent=min(currents(currents>conductorInfo(c,:).convergeCurrent));
+%     output=output(currents>conductorInfo(c,:).convergeCurrent,:);
+%     output(:,3)=output(:,2)-ambtemps(currents>conductorInfo(c,:).convergeCurrent);
+%     guessErr = output(:,2)-output(:,1);
+%     output(:,4)=(output(:,2)-output(:,1))./output(:,2);
+%     
+%     conductorInfo(c,:).guessMIN=min(guessErr);
+%     conductorInfo(c,:).guessMAX=max(guessErr);
+%     conductorInfo(c,:).guessMEAN=mean(guessErr);
+%     conductorInfo(c,:).guessSTD=std(guessErr);
+%     conductorInfo(c,:).guessMAPE=mean(abs(output(:,4)));
+%     
+%     conductorInfo(c,:).lowestRise=min(output(output(:,3)~=0,3));
+%     conductorInfo(c,:).Cmax=max(cmax(currents>conductorInfo(c,:).convergeCurrent));
+%     conductorInfo(c,:).Cmin=min(cmin(cmin~=0 & currents>conductorInfo(c,:).convergeCurrent));
+%     conductorInfo(c,:).simulated=1;
 end
-conductorInfo = conductorInfo(startCond:endCond,:);
-conductorInfo.Index = (startCond:endCond)';
+% conductorInfo = conductorInfo(startCond:endCond,:);
+% conductorInfo.Index = (startCond:endCond)';
+
+a=horzcat(output(:,[1,2,5]),ambtemps,currents,winds,psols);
+a=a(a(:,3)==0,:);
 
 save(strcat(foldersource,'Step2_ConvergenceProof/',num2str(startCond),'matlab.mat'))
