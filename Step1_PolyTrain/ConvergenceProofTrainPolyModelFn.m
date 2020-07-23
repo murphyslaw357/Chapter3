@@ -1,23 +1,23 @@
 if(ispc==1)
     splinesource='C:\Users\ctc\Documents\GitHub\Chapter3\';
     foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\Step1_PolyTrain\';
-    startCond = 1
-    endCond = 2
+    startCond = 215
+    endCond = 215
 elseif(ismac==1)
     foldersource='/Users/Shaun/Documents/GitHub/Chapter3/';
 elseif(isunix==1)
-    splinesource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/Step1_PolyTrain/';
-    addpath(genpath(foldersource));
     startCond = str2num(getenv('SGE_TASK_ID'))
     if(isempty(startCond))
         startCond=1
         endCond=415
     else
-        endCond = startCond + 1
+        endCond = startCond
     end
 end
-
+restoredefaultpath
+addpath(genpath(foldersource));
+    
 conductorInfo=importfile1(strcat(foldersource,'ConductorInfo.csv'));
 [conductorCount,~]=size(conductorInfo);
 
@@ -57,11 +57,17 @@ for c=startCond:endCond
     diam=cdata.DiamCompleteCable*0.0254;
     beta=(cdata.ResistanceACHighdegcMeter-cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
     alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
-    rootts=zeros(weatherPermuationCount,1);
+    rootts=zeros(weatherPermutationCount,1);
+    Pcons=zeros(weatherPermutationCount,1);
+    Prads=zeros(weatherPermutationCount,1);
+    I2Rs=zeros(weatherPermutationCount,1);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for counter=1:weatherPermutationCount
-        [roott] = GetTempMorgan(currents.*maxcurrent,ambtemps,H,diam,phi,winds,alpha,beta,epsilons,alphas,psols,f,ff,ffinv);
-        rootts(counter)=roott;         
+        [roott,I2R,Prad,Pcon,~,~,~,~,~,~,~,~,~] = GetTempMorgan(currents(counter).*maxcurrent,ambtemps(counter),H,diam,phi,winds(counter),alpha,beta,epsilons,alphas,psols(counter));
+        rootts(counter)=roott;     
+        Pcons(counter)=Pcon;
+        Prads(counter)=Prad;
+        I2Rs(counter)=I2R;
     %    if root(counter)==ambtemps(counter)
     %        error('error with bisection method: Tc = Ta')
     %    end
@@ -71,8 +77,8 @@ for c=startCond:endCond
     %i=5;
     for i=1:6
         mdl=MultiPolyRegress(x,rootts-ambtemps,i);
-        if(mdl.CVMAE<err)
-            err=mdl.CVMAE;
+        if(mdl.MAE<err)
+            err=mdl.MAE;
             conductorInfo(c,:).polyorder=i;
             conductorInfo(c,:).polymodels=func2str(mdl.PolynomialExpression);
         end
@@ -90,4 +96,4 @@ end
 conductorInfo = conductorInfo(startCond:endCond,:);
 conductorInfo.Index = (startCond:endCond)';
 disp(strcat(foldersource,num2str(startCond),'matlab.mat'))
-save(strcat(foldersource,num2str(startCond),'matlab.mat'),'conductorInfo')
+save(strcat(foldersource,num2str(startCond),'matlab.mat'))

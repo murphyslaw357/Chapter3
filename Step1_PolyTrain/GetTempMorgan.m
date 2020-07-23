@@ -106,7 +106,7 @@ function [GuessTc,I2R,Prad,Pcon,GrPr,A,m,Nueff,Cinv,ninv,Reeff,C,n] = GetTempMor
         Nueff=C*(Reeff^n);
         Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
         
-        if((I2R + Psol*D*alphas)>(Prad+Pcon))
+        if((I2R + Psol*D*alphas-Prad-Pcon)>0)
             GuessTcLeft = GuessTc;
         else
             GuessTcRight = GuessTc;
