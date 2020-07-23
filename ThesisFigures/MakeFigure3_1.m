@@ -26,13 +26,13 @@ end
 % end
 % 
 % conductorDataTotal=sortrows(conductorDataTotal,'Index');
-load(strcat(foldersource,'conductorInfoStep2.mat'))
+load(strcat(foldersource,'conductorInfoStep3.mat'))
 [conductorCount,~] = size(conductorInfo);
 
-convergeLimit=conductorInfo.convergeCurrent;
+convergeLimit=conductorInfo.minGuessRise;
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
-plot(convergeLimit.*100,'linewidth',1)
-ylim([0 2])
+plot(convergeLimit,'linewidth',1)
+ylim([0.4 2.2])
 hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
@@ -47,7 +47,7 @@ ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';
 xlabel('Conductor Index')
-ylabel('Minimum Convergence Current (%)')
+ylabel('Minimum Starting Temperature Rise [°C]')
 
 set(gcf, 'Color', 'w');
 set(gca, 'FontName', 'Calibri')
