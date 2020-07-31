@@ -52,11 +52,11 @@ diam=cdata.DiamCompleteCable*0.0254;
 beta=(cdata.ResistanceACHighdegcMeter-...
     cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
 alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
-if(c==215)
-    polymodel=str2func(conductorInfo(c-1,:).polymodels);
-else
-    polymodel=str2func(cdata.polymodels);
-end
+% if(c==215)
+%     polymodel=str2func(conductorInfo(c-1,:).polymodels);
+% else
+%     polymodel=str2func(cdata.polymodels);
+% end
 GuessTcs=GetGuessTemp(maxcurrent.*currents,ambtemps,diam,phi,winds,...
     alpha,beta,epsilons,alphas,psols,polymodel); 
 % if(any(c==[108]))

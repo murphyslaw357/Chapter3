@@ -3,11 +3,14 @@ clc
 close all
 conductorInfoTotal=[];
 
-rootFolder = 'C:\Users\ctc\Documents\GitHub\Chapter3\';
-folderStart = 'C:\Users\ctc\Documents\GitHub\Chapter3\Step2_ConvergenceRegion\';
+%rootFolder = 'C:\Users\ctc\Documents\GitHub\Chapter3\';
+%folderStart = 'C:\Users\ctc\Documents\GitHub\Chapter3\Step2_ConvergenceRegion\';
+rootFolder = '/Volumes/THESIS/Github/Chapter3/';
+folderStart = '/Volumes/THESIS/Github/Chapter3/Step2_ConvergenceRegion/';
+
 myFiles = dir(fullfile(folderStart,'*.mat'));
 for k = 1:length(myFiles)
-    load(strcat(folderStart,'\',myFiles(k).name),'cdata')
+    load(strcat(folderStart,myFiles(k).name),'cdata')
     %taCriteria=(output(:,1)<ambtemps & output(:,2)<ambtemps & output(:,3)<ambtemps);
     conductorInfoTotal = [conductorInfoTotal;cdata];
     disp(k/length(myFiles))
