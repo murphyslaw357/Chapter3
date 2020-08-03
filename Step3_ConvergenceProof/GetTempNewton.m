@@ -111,7 +111,7 @@ function [GuessTc,I2R,I2Rprime,Prad,PradPrime,Pcon,PconPrime,GrPr,A,m,Nueff,Cinv
         end
         
         Ren=(Nun/Cinv)^(1/ninv);
-        RenPrimednudf=(1/ninv)*(Nun/Cinv)^(1/ninv-1);      %differentiate(fNuRe,Nudf);
+        RenPrimednudf=(1/(Cinv*ninv))*(Nun/Cinv)^(1/ninv-1);    
         RenPrimedtc=RenPrimednudf.*NudfPrimedtc;
         Reeff=sqrt((Re.^2)+(Ren.^2));
         Top=Re.*RePrimedtc+Ren.*RenPrimedtc;

@@ -31,8 +31,8 @@ load(strcat(foldersource,'conductorInfoStep3.mat'))
 
 convergeLimit=conductorInfo.minGuessRise;
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
-plot(convergeLimit,'linewidth',1)
-ylim([0.4 2.2])
+scatter(conductorInfo.Index,convergeLimit,50,'.') %'linewidth',1
+% ylim([0.4 2.2])
 hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');

@@ -4,8 +4,9 @@ close all
 
 if(ispc==1)
     startCond = 1
-    endCond = 132
+    endCond = 415
     foldersource='C:\Users\ctc\Documents\GitHub\Chapter3\';
+%     parpool('Chloe3',54)
 elseif(ismac==1)
     startCond = 1
     endCond = 132
@@ -16,45 +17,45 @@ elseif(isunix==1)
     foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
-if(~isfile(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'matlab.mat')))
-    %% Load conductor info
-    load(strcat(foldersource,'conductorInfoStep2.mat'))
+%% Load conductor info
+load(strcat(foldersource,'conductorInfoStep2.mat'))
 
-    [conductorCount,~]=size(conductorInfo);
-    conductorInfo.ResistanceACLowdegc=conductorInfo.ResistanceDCLowdegc;
-    conductorInfo.simulated=zeros(conductorCount,1);
-    conductorInfo.Cmax=zeros(conductorCount,1);
-    conductorInfo.Cmin=zeros(conductorCount,1);
-    conductorInfo.guessMAPE = zeros(conductorCount,1);
-    conductorInfo.guessMIN = zeros(conductorCount,1);
-    conductorInfo.guessMAX = zeros(conductorCount,1);
-    conductorInfo.guessMEAN = zeros(conductorCount,1);
-    conductorInfo.guessSTD = zeros(conductorCount,1);
-    conductorInfo.fPrimeCheck = zeros(conductorCount,1);
-    %% Setup weather data
-    epsilons=0.9;
-    H=0;
-    phi=90*pi/180;
-    maxpsol=1050;
-    alphas=0.9;
-    spacer=15;
+[conductorCount,~]=size(conductorInfo);
+conductorInfo.ResistanceACLowdegc=conductorInfo.ResistanceDCLowdegc;
+conductorInfo.simulated=zeros(conductorCount,1);
+conductorInfo.Cmax=zeros(conductorCount,1);
+conductorInfo.Cmin=zeros(conductorCount,1);
+conductorInfo.guessMAPE = zeros(conductorCount,1);
+conductorInfo.guessMIN = zeros(conductorCount,1);
+conductorInfo.guessMAX = zeros(conductorCount,1);
+conductorInfo.guessMEAN = zeros(conductorCount,1);
+conductorInfo.guessSTD = zeros(conductorCount,1);
+conductorInfo.fPrimeCheck = zeros(conductorCount,1);
+%% Setup weather data
+epsilons=0.9;
+H=0;
+phi=90*pi/180;
+maxpsol=1050;
+alphas=0.9;
+spacer=15;
 
-    psols=0:maxpsol/spacer:maxpsol;
-    winds=0:10/spacer:10;
-    ambtemps=-33:98/spacer:65;
-    currents=[1.5:-0.005:0.02, 0.019:-0.001:0.002];
-    inputCombo = allcomb(currents,psols,winds,ambtemps);
-    currents=inputCombo(:,1);
-    psols=inputCombo(:,2);
-    winds=inputCombo(:,3);
-    ambtemps=inputCombo(:,4);
-    weatherPermutationCount = size(inputCombo,1);
+psols=0:maxpsol/spacer:maxpsol;
+winds=0:10/spacer:10;
+ambtemps=-33:98/spacer:65;
+currents=[1.5:-0.005:0.02, 0.019:-0.001:0.002];
+inputCombo = allcomb(currents,psols,winds,ambtemps);
+currents=inputCombo(:,1);
+psols=inputCombo(:,2);
+winds=inputCombo(:,3);
+ambtemps=inputCombo(:,4);
+weatherPermutationCount = size(inputCombo,1);
 
-    %% Run conductor simulation 
-    if endCond>conductorCount
-        endCond=conductorCount;
-    end
-    for c=startCond:endCond
+%% Run conductor simulation 
+if endCond>conductorCount
+    endCond=conductorCount;
+end
+for c=endCond:-1:startCond
+%     if(~isfile(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'matlab.mat')))
         disp(c)
         cdata=conductorInfo(c,:);  
         rootts = ones(weatherPermutationCount,1);
@@ -66,132 +67,127 @@ if(~isfile(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'mat
         polymodel=str2func(cdata.polymodels);
         GuessTcs=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
             alpha,beta,epsilons,alphas,psols,polymodel); 
-        %I2Rs = zeros(weatherPermutationCount,1);
-        %Prads = zeros(weatherPermutationCount,1);
-        %Pcons = zeros(weatherPermutationCount,1);
         iterationData = zeros(weatherPermutationCount,4);
         cmax=zeros(weatherPermutationCount,1);
         fullRun=zeros(weatherPermutationCount,1);
         fPrimeCheck=zeros(weatherPermutationCount,1);
         fPrimeAvg=zeros(weatherPermutationCount,1);
         fPrimePrimeAvg=zeros(weatherPermutationCount,1);
+        failTcRise=realmax.*ones(weatherPermutationCount,1);
         sim=0;
         tic
-        for counter=1:weatherPermutationCount
-            if(mod(counter,1000)==0)
-                toc
-                disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
+        minrise=cdata.minGuessRise;
+        for bigStep=1:5000:weatherPermutationCount
+            endStep=bigStep+4999;
+            if(endStep>weatherPermutationCount)
+                endStep=weatherPermutationCount;
             end
-            GuessTc=GuessTcs(counter);
-            currentCounter = currents(counter)*maxcurrent;
-            ambtempCounter = ambtemps(counter);
-            windCounter = winds(counter);
-            psolCounter = psols(counter);
-            GuessTcRise=GuessTc-ambtemps(counter);
-            if(GuessTcRise<=cdata.minGuessRise)
-                continue;
-            end
-
-            [roott,~,~,~,~,~,~] = GetTempNewton(currentCounter,...
-                ambtempCounter,H,diam,phi,windCounter,...
-                alpha,beta,epsilons,alphas,psolCounter,GuessTc);
-
-            %I2Rs(counter)=I2R;
-            %Prads(counter)=Prad;
-            %Pcons(counter)=Pcon;
-            rootts(counter)=roott;
-
-            lilTopEnd=max(roott,GuessTc)+0.05;
-            lilBottomEnd=min(roott,GuessTc);
-            bigTopEnd=lilTopEnd+10;
-            bigBottomEnd=lilBottomEnd-10;
-            rerun=1;
-            reruncounter=0;
-
-            while(rerun)
-                rerun=0;
-                reruncounter=reruncounter+1;
-
-                if(reruncounter>5000)
-                    msg='error condition: rerun counter exceeded limit';
-                    error(msg)
+            disp(bigStep)
+            toc
+            parfor counter=bigStep:endStep
+    %             if(mod(counter,5000)==0)
+    %                 toc
+    %                 disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
+    %             end
+                GuessTc=GuessTcs(counter);
+                currentCounter = currents(counter)*maxcurrent;
+                ambtempCounter = ambtemps(counter);
+                windCounter = winds(counter);
+                psolCounter = psols(counter);
+                GuessTcRise=GuessTc-ambtemps(counter);
+                if(GuessTcRise<=cdata.minGuessRise)
+                    continue;
                 end
 
-                searchIncrement = (lilTopEnd-lilBottomEnd)/50;
-                temps=[(bigBottomEnd:searchIncrement:bigTopEnd)'; lilTopEnd; lilBottomEnd];
-                temps(temps<=ambtemps(counter))=[];
-                searchCount=size(temps,1);
+                [roott,~,~,~,~,~,~] = GetTempNewton(currentCounter,...
+                    ambtempCounter,H,diam,phi,windCounter,...
+                    alpha,beta,epsilons,alphas,psolCounter,GuessTc);
 
-                Tc=zeros(searchCount,1);
-                I2R=zeros(searchCount,1);
-                I2Rprime=zeros(searchCount,1);
-                Prad=zeros(searchCount,1);
-                PradPrime=zeros(searchCount,1);
-                PradPrimePrime=zeros(searchCount,1);
-                Pcon=zeros(searchCount,1);
-                PconPrime=zeros(searchCount,1);
-                PconPrimePrime=zeros(searchCount,1);
-                
-                [~,~,~,~,~,~,~,~,~,~,~,~,A,m,Cinv,ninv,C,n]=GetTempNewtonFirstIteration(...
-                        currentCounter,ambtempCounter,H,diam,phi,...
-                        windCounter,alpha,beta,epsilons,alphas,psolCounter,...
-                        GuessTc,[]);
-                AmCinvninvCn = [A,m,Cinv,ninv,C,n];
-                
-                for i =1:searchCount
-                    [Tc(i),I2R(i),I2Rprime(i),Prad(i),PradPrime(i),PradPrimePrime(i),Pcon(i),PconPrime(i),...
-                        PconPrimePrime(i),~,~,~,~,~,~,~,~,~] =GetTempNewtonFirstIteration(...
-                        currentCounter,ambtempCounter,H,diam,phi,...
-                        windCounter,alpha,beta,epsilons,alphas,psolCounter,...
-                        temps(i),AmCinvninvCn);
-                end
-                h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
-                hprime=I2Rprime-PconPrime-PradPrime;
-                hprimeprime=-1*PconPrimePrime-PradPrimePrime;
+                rootts(counter)=roott;
+                lilTopEnd=max(roott,GuessTc)+0.05;
+                lilBottomEnd=min(roott,GuessTc);
+                bigTopEnd=lilTopEnd+10;
+                bigBottomEnd=lilBottomEnd-10;
+                rerun=1;
+                reruncounter=0;
 
-                bigSearch=horzcat(temps,Tc,abs((h.*hprimeprime)./(hprime.^2)),hprime);
+                while(rerun)
+                    rerun=0;
+                    reruncounter=reruncounter+1;
 
-                searchRes=bigSearch(bigSearch(:,1)>=lilBottomEnd & ...
-                bigSearch(:,1)<= lilTopEnd,:);
-                if(max(searchRes(:,2))>bigTopEnd)
-                    bigTopEnd = max(searchRes(:,2))+10;
-                    rerun=1;
-                end
-                if(min(searchRes(:,2))<bigBottomEnd && min(searchRes(:,2))>ambtemps(counter))
-                    bigBottomEnd = max([ambtemps(counter),min(searchRes(:,2))-10]);
-                    rerun=1;
-                end
-                if(min(searchRes(:,2))<=ambtemps(counter))
-                    error(strcat('Convergence current too low - update to less than Ta: ',num2str(currents(counter))))
-                end
-                if(max(searchRes(:,2))>lilTopEnd)
-                    lilTopEnd=max(searchRes(:,2))+0.05;
-                    rerun=1;
-                end
-                if(min(searchRes(:,2))<lilBottomEnd)
-                    lilBottomEnd=min(searchRes(:,2));
-                    rerun=1;
-                end
-                if(max(searchRes(:,3))>1)
-                    if(GuessTcRise>cdata.minGuessRise)
-                        cdata.minGuessRise=GuessTcRise;
+                    if(reruncounter>5000)
+                        msg='error condition: rerun counter exceeded limit';
+                        error(msg)
                     end
-                    disp(strcat('Guess Trise too low - |c|>1: ',num2str(GuessTcRise)))
-                    sim=sim+1;
-                    break
+
+                    searchIncrement = (lilTopEnd-lilBottomEnd)/50;
+                    temps=[(bigBottomEnd:searchIncrement:bigTopEnd)'; lilTopEnd; lilBottomEnd];
+                    temps(temps<=ambtemps(counter))=[];
+                    searchCount=size(temps,1);
+
+                    [~,~,~,~,~,~,~,~,~,~,~,~,A,m,Cinv,ninv,C,n]=GetTempNewtonFirstIteration(...
+                            currentCounter,ambtempCounter,H,diam,phi,...
+                            windCounter,alpha,beta,epsilons,alphas,psolCounter,...
+                            GuessTc,[]);
+                    AmCinvninvCn = [A,m,Cinv,ninv,C,n];
+
+                    [Tc,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,PconPrime,...
+                        PconPrimePrime,~,~,~,~,~,~,~,~,~] =GetTempNewtonFirstIteration2(...
+                        currentCounter,ambtempCounter,H,diam,phi,...
+                        windCounter,alpha,beta,epsilons,alphas,psolCounter,...
+                        temps,AmCinvninvCn);
+
+                    h=I2R+psols(counter)*diam*alphas-Pcon-Prad;
+                    hprime=I2Rprime-PconPrime-PradPrime;
+                    hprimeprime=-1*PconPrimePrime-PradPrimePrime;
+
+                    bigSearch=horzcat(temps,Tc,abs((h.*hprimeprime)./(hprime.^2)),hprime);
+
+                    searchRes=bigSearch(bigSearch(:,1)>=lilBottomEnd & ...
+                    bigSearch(:,1)<= lilTopEnd,:);
+                    if(max(searchRes(:,2))>bigTopEnd)
+                        bigTopEnd = max(searchRes(:,2))+10;
+                        rerun=1;
+                    end
+                    if(min(searchRes(:,2))<bigBottomEnd && min(searchRes(:,2))>ambtemps(counter))
+                        bigBottomEnd = max([ambtemps(counter),min(searchRes(:,2))-10]);
+                        rerun=1;
+                    end
+                    if(min(searchRes(:,2))<=ambtemps(counter))
+                        error(strcat('Convergence current too low - update to less than Ta: ',num2str(currents(counter))))
+                    end
+                    if(max(searchRes(:,2))>lilTopEnd)
+                        lilTopEnd=max(searchRes(:,2))+0.05;
+                        rerun=1;
+                    end
+                    if(min(searchRes(:,2))<lilBottomEnd)
+                        lilBottomEnd=min(searchRes(:,2));
+                        rerun=1;
+                    end
+                    if(max(searchRes(:,3))>1)
+    %                     if(GuessTcRise>cdata.minGuessRise)
+                            failTcRise(counter)=GuessTcRise;
+    %                         cdata.minGuessRise=GuessTcRise;
+    %                     end
+                        disp(strcat('Guess Trise too low - |c|>1: ',num2str(GuessTcRise)))
+                        sim=sim+1;
+                        break
+                    end
                 end
+                iterationData(counter,:)=[bigTopEnd,bigBottomEnd,lilBottomEnd,lilTopEnd];
+                if(all(searchRes(:,4)<0)) 
+                    fPrimeCheck(counter)=-1;
+                elseif (all(searchRes(:,4)>0))
+                    fPrimeCheck(counter)=1;
+                end
+                fullRun(counter)=1;
+                cmax(counter)=max(searchRes(:,3));
             end
-            iterationData(counter,:)=[bigTopEnd,bigBottomEnd,lilBottomEnd,lilTopEnd];
-            if(all(searchRes(:,4)<0)) 
-                fPrimeCheck(counter)=-1;
-            elseif (all(searchRes(:,4)>0))
-                fPrimeCheck(counter)=1;
-            end
-            fullRun(counter)=1;
-            cmax(counter)=max(searchRes(:,3));
          end
          if(all(fPrimeCheck(fullRun==1)))
              cdata.fPrimeCheck=1;
+         elseif(all(fPrimeCheck(fullRun==-1)))
+             cdata.fPrimeCheck=-1;
          end
          guessErr=GuessTcs(fullRun==1)-rootts(fullRun==1);
          cdata.guessMIN=min(guessErr);
@@ -202,7 +198,7 @@ if(~isfile(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'mat
          cdata.Cmax=max(cmax(fullRun==1));
          cdata.Cmin=min(cmax(fullRun==1));
          cdata.simulated=sim;
-    end
-
-    save(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'matlab.mat'),'cdata','iterationData')
+         cdata.minGuessRise=min([failTcRise cdata.minGuessRise]);
+         save(strcat(foldersource,'Step3_ConvergenceProof/',num2str(startCond),'matlab.mat'),'cdata');
+%      end
 end

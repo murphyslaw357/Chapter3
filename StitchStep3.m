@@ -3,10 +3,10 @@ clc
 close all
 conductorInfoTotal=[];
 
-%rootFolder = 'C:\Users\ctc\Documents\GitHub\Chapter3\';
-%folderStart = 'C:\Users\ctc\Documents\GitHub\Chapter3\Step3_ConvergenceProof\';
-rootFolder = '/Volumes/THESIS/Github/Chapter3/';
-folderStart = '/Volumes/THESIS/Github/Chapter3/Step3_ConvergenceProof/';
+rootFolder = 'C:\Users\ctc\Documents\GitHub\Chapter3\';
+folderStart = 'C:\Users\ctc\Documents\GitHub\Chapter3\Step3_ConvergenceProof\';
+% rootFolder = '/Volumes/THESIS/Github/Chapter3/';
+% folderStart = '/Volumes/THESIS/Github/Chapter3/Step3_ConvergenceProof/';
 
 myFiles = dir(fullfile(folderStart,'*.mat'));
 for k = 1:length(myFiles)

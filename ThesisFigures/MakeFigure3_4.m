@@ -12,7 +12,7 @@ end
 
 load(strcat(foldersource,'murphyVsMorgan_132.mat'))
 simCount=1:weatherPermutationCount;
-figure('Renderer', 'painters', 'Position', [10 10 700 450]);
+figure('Renderer', 'painters', 'Position', [10 10 700 500]);
 subplot(2,1,1);
 plot(morganTemps-ambtemps)
 yticks([0 100 200 300 400])
@@ -20,7 +20,7 @@ ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';
 xlabel('Simulation Count')
-ylabel('Conductor Temperature Rise [°C]')
+ylabel({'Reference Solution Method';'Conductor Temperature Rise [°C]'})
 set(gca, 'FontName', 'Calibri')
 set(gca,'fontsize', 11)
 subplot(2,1,2); 
@@ -32,7 +32,7 @@ scatter(morganTemps(minRiseThresh==0 & abs(err)<1e-2)-ambtemps(minRiseThresh==0 
 ylim([-5 1])
 yticks([-5 -4 -3 -2 -1 0 1])
 xlabel('Conductor Temperature Rise')
-ylabel('Solution Error [°C]')
+ylabel({'Ch.3 NR Method';'Solution Error [°C]'})
 ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';

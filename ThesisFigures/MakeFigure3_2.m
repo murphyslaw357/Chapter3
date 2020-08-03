@@ -33,7 +33,7 @@ line([339 339],yL,'LineStyle','--','Color','r');
 legend('Maximum c')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
-yticks([0 0.025 0.05 0.075 0.1])
+% yticks([0 0.025 0.05 0.075 0.1])
 ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';
@@ -51,7 +51,8 @@ line([339 339],yL,'LineStyle','--','Color','r');
 legend('Minimum c')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
-yticks([0 0.75e-8 1.5e-8 2.25e-8 3e-8])
+ylim([0.5e-8 2e-8])
+% yticks([0 0.75e-8 1.5e-8 2.25e-8 3e-8])
 ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';

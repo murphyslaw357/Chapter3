@@ -45,7 +45,7 @@ function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,...
     gD3 = g*(D^3);
     Gr = gD3*(GuessTc-Ta)/(Tfilmk.*(vf^2));
     GrPrime = gD3*(Ta*vf-((GuessTc^2)-Ta^2)*vfPrime)/((Tfilmk^2)*(vf^3));
-    GrPrimePrime=(-2*gD3*GuessTc/((Tfilmk.^2).*(vf.^3)))*vfPrime-...
+    GrPrimePrime=(gD3*(Ta-2*GuessTc)/((Tfilmk.^2).*(vf.^3)))*vfPrime-...
         (gD3/((Tfilmk^3)*(vf^4)))*(vf+3*Tfilmk*vfPrime)*...
         (Ta*vf-((GuessTc^2)-Ta^2)*vfPrime);
     Pr=0.715-(2.5e-4)*GuessTfilm;
@@ -118,8 +118,8 @@ function [GuessTcOutput,I2R,I2Rprime,Prad,PradPrime,PradPrimePrime,Pcon,...
         ninv=AmCinvninvCn(4);
     end
     Ren=(Nun/Cinv)^(1/ninv);
-    RenPrimednudf=(1/ninv)*(Nun/Cinv)^(1/ninv-1);    
-    RenPrimePrimednudf=(1/ninv-1)*(1/ninv)*(Nun/Cinv)^(1/ninv-2); 
+    RenPrimednudf=(1/(Cinv*ninv))*(Nun/Cinv)^(1/ninv-1);    
+    RenPrimePrimednudf=((1-ninv)/((Cinv^2)*(ninv^2)))*(Nun/Cinv)^(1/ninv-2); 
     RenPrimedtc=RenPrimednudf.*NunPrimedtc;
     RenPrimePrimedtc2=RenPrimePrimednudf.*NunPrimedtc+RenPrimednudf.*...
         NunPrimePrimedtc2;
