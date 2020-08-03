@@ -38,12 +38,19 @@ H=0;
 phi=90*pi/180;
 maxpsol=1050;
 alphas=0.9;
-spacer=10;
+% spacer=10;
+% 
+% psols=0:maxpsol/spacer:maxpsol;
+% winds=0:10/spacer:10;
+% ambtemps=-33:98/spacer:65;
+% currents=[1.5:-0.01:0.02, 0.019:-0.001:0.002];
+spacer=20;
 
 psols=0:maxpsol/spacer:maxpsol;
 winds=0:10/spacer:10;
 ambtemps=-33:98/spacer:65;
-currents=[1.5:-0.01:0.02, 0.019:-0.001:0.002];
+currents=[0.002:0.001:0.019, 0.02:0.005:1.5];
+
 inputCombo = allcomb(currents,psols,winds,ambtemps);
 currents=inputCombo(:,1);
 psols=inputCombo(:,2);
