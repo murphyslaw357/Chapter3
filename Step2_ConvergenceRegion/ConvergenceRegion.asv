@@ -10,7 +10,7 @@ elseif(ismac==1)
     foldersource='/Volumes/THESIS/GitHub/Chapter3/';
 elseif(isunix==1)
     c = str2num(getenv('SGE_TASK_ID'))
-    foldersource='/lustre/scratch/srm329/Chapter3/';
+    foldersource='/mnt/HA/groups/nieburGrp/Shaun/Chapter3/';
 end
 
 restoredefaultpath
@@ -44,8 +44,8 @@ ambtemps = inputCombo(:,4);
 weatherPermutationCount = size(inputCombo,1);
 
 %% Run conductor simulation 
-Tc2s = ones(weatherPermutationCount,1);
-Tc3s = ones(weatherPermutationCount,1);
+Tci1 = ones(weatherPermutationCount,1);
+output3 = ones(weatherPermutationCount,1);
 diam = cdata.DiamCompleteCable*0.0254;
 beta = (cdata.ResistanceACHighdegcMeter-...
     cdata.ResistanceACLowdegcMeter)/(cdata.HighTemp-cdata.LowTemp);
@@ -64,17 +64,16 @@ for i=1:weatherPermutationCount
             GetTempNewtonFirstIteration(maxcurrent*currents(i),ambtemps(i),...
             H,diam,phi,winds(i),alpha,beta,epsilons,alphas,...
             psols(i),GuessTcs(i),[]);
-        Tc2s(i)=Tc2;
+        Tci1(i)=Tc2;
         if(Tc2>ambtemps(i))
             [Tc3,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = ...
                 GetTempNewtonFirstIteration(maxcurrent*currents(i),ambtemps(i),...
                 H,diam,phi,winds(i),alpha,beta,epsilons,alphas,...
                 psols(i),Tc2,[A,m,Cinv,ninv,C,n]);
-            Tc3s(i)=Tc3;
+            output3(i)=Tc3;
         end
     end
 end
-
-criteria=(GuessTcs<=ambtemps)|(Tc2s<=ambtemps)|(Tc3s<=ambtemps);
+criteria=(GuessTcs<=ambtemps)|(Tci1<=ambtemps)|(output3<=ambtemps);
 cdata.minGuessRise=max(GuessTcs(criteria)-ambtemps(criteria))+0.1;
 save(strcat(foldersource,'Step2_ConvergenceRegion/',num2str(c),'matlab.mat'))

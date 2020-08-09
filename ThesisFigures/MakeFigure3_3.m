@@ -15,7 +15,14 @@ load(strcat(foldersource,'conductorInfoStep3.mat'))
 
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
 
-p = plot([conductorInfo.guessMIN conductorInfo.guessMAX conductorInfo.guessMEAN conductorInfo.guessSTD],'linewidth',1)
+
+%p = plot([conductorInfo.guessMIN conductorInfo.guessMAX conductorInfo.guessMEAN conductorInfo.guessSTD],'linewidth',1)
+% y = [conductorInfo.guessMIN conductorInfo.guessMAX conductorInfo.guessMEAN conductorInfo.guessSTD];
+scatter(conductorInfo.Index,conductorInfo.guessMIN,50,'.')
+hold on
+scatter(conductorInfo.Index,conductorInfo.guessMAX,50,'.')
+scatter(conductorInfo.Index,conductorInfo.guessMEAN,50,'.')
+scatter(conductorInfo.Index,conductorInfo.guessSTD,50,'.')
 
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
@@ -25,7 +32,7 @@ line([175 175],yL,'LineStyle','--','Color','r');
 line([230 230],yL,'LineStyle','--','Color','r');
 line([302 302],yL,'LineStyle','--','Color','r');
 line([339 339],yL,'LineStyle','--','Color','r');
-legend([p(1) p(2) p(3) p(4)],'Min.','Max.','Mean','Std.')
+legend('Min.','Max.','Mean','Std.')
 xlabel('Conductor Index')
 ylabel('Starting Guess Error [°C]')
 % yticks([0 0.025 0.05 0.075 0.1])

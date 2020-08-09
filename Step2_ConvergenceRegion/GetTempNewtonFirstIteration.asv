@@ -1,7 +1,6 @@
 function [GuessTcOutput,I2R,dI2R_dTc,Prad,dPrad_dTc,d2Prad_dTc2,Pcon,...
-    dPcon_dTc,d2Pcon_dTc2,Gr,dGr_dTc,Nun,A,m,Cinv,ninv,C,n] = ...
-    GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,...
-    alphas,Psol,GuessTc,AmCinvninvCn)
+    PconPrime,PconPrimePrime,Gr,dGr_dTc,Nun,A,m,Cinv,ninv,C,n] = GetTempNewtonFirstIteration(I,Ta,H,D,phi,Vw,alpha,beta,epsilons,alphas,...
+    Psol,GuessTc,AmCinvninvCn)
     %%%%%%%%%%%%%%%%%%%%%%%%%Input Variables%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %I - RMS steady-state load current - amps
     %Ta - ambient temperature - degc
@@ -174,24 +173,24 @@ if(isempty(AmCinvninvCn))
     Nueff = C*(Reeff^n);
     dNueff_dReeff=C*n*(Reeff^(n-1));
     d2Nueff_dReeff2=(n-1)*C*n*(Reeff^(n-2));
-    dNueff_dTc=dNueff_dReeff.*ReeffPrimedtc;
-    d2Nueff_dTc2=d2Nueff_dReeff2.*ReeffPrimedtc+...
+    NueffPrimedtc=dNueff_dReeff.*ReeffPrimedtc;
+    NueffPrimePrimedtc2=NueffPrimePrimedreeff2.*ReeffPrimedtc+...
         dNueff_dReeff.*ReeffPrimePrimedtc2;
     
     GuessTcOutput=GuessTc;
-    
+    %mixed convection
     Pcon=pi*Nueff*Lambdaf*(GuessTc-Ta);
-    dPcon_dTc=pi*(Nueff*Lambdaf+(GuessTc-Ta)*...
-        (dLambdaf_dTc*Nueff+dNueff_dTc*Lambdaf));
-    d2Pcon_dTc2=pi*(Nueff*dLambdaf_dTc+dNueff_dTc*Lambdaf+...
-        dLambdaf_dTc*Nueff+dNueff_dTc*Lambdaf+...
-        (GuessTc-Ta)*(dLambdaf_dTc*dNueff_dTc+...
-        d2Nueff_dTc2*Lambdaf+dNueff_dTc*dLambdaf_dTc));
+    PconPrime=pi*(Nueff*Lambdaf+(GuessTc-Ta)*(dLambdaf_dTc*Nueff+NueffPrimedtc*Lambdaf));
+    PconPrimePrime=pi*(Nueff*dLambdaf_dTc+NueffPrimedtc*Lambdaf+...
+        dLambdaf_dTc*Nueff+NueffPrimedtc*Lambdaf+...
+        (GuessTc-Ta)*(dLambdaf_dTc*NueffPrimedtc+...
+        NueffPrimePrimedtc2*Lambdaf+NueffPrimedtc*dLambdaf_dTc));
 
     %%                        MISMATCH AND UPDATE                        %%
-    Hprime=dI2R_dTc-dPrad_dTc-dPcon_dTc;
-    if(Hprime>0 || isnan(dPcon_dTc))
-        error('Hprime greater than zero or PconPrime is nan');
+    Hprime=dI2R_dTc-dPrad_dTc-PconPrime;
+    if(Hprime>0 || isnan(PconPrime))
+        msg='Hprime greater than zero or PconPrime is nan';
+        error(msg);
     end
     
     Mismatch=I2R+Psol*D*alphas-Prad-Pcon;
