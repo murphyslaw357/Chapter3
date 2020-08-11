@@ -20,7 +20,7 @@ cMax=conductorInfo.Cmax;
 cMin=conductorInfo.Cmin;
 subplot(2,1,1);
 scatter(conductorInfo.Index,cMax,50,'.')
-ylim([0 0.4])
+ylim([0 0.5])
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');
@@ -33,7 +33,7 @@ line([339 339],yL,'LineStyle','--','Color','r');
 legend('Maximum c')
 xlabel('Conductor Index')
 ylabel('Convergence Coefficient')
-yticks([0 0.1 0.2 0.3 0.4])
+yticks([0 0.1 0.2 0.3 0.4 0.5])
 set(gca, 'FontName', 'Calibri')
 set(gca,'fontsize', 11)
 ax = gca;
@@ -42,7 +42,7 @@ ax.GridLineStyle = '-';
 
 subplot(2,1,2); 
 scatter(conductorInfo.Index,cMin,50,'.')
-ylim([0.5e-8 2e-8])
+ylim([0.5e-8 1.5e-8])
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
 line([132 132],yL,'LineStyle','--','Color','r');

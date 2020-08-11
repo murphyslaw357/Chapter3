@@ -16,7 +16,7 @@ elseif(isunix==1)
 end
 
 %% Load conductor info
-load(strcat(foldersource,'conductorInfoStep2.mat'))
+load(strcat(foldersource,'conductorInfoStep3.mat'))
 
 [conductorCount,~]=size(conductorInfo);
 % conductorInfo.ResistanceACLowdegc=conductorInfo.ResistanceDCLowdegc;
@@ -44,12 +44,14 @@ alphas=0.9;
 % winds=0:10/spacer:10;
 % ambtemps=-33:98/spacer:65;
 % currents=[1.5:-0.01:0.02, 0.019:-0.001:0.002];
-spacer=20;
+spacer=15;
 
 psols=0:maxpsol/spacer:maxpsol;
 winds=0:10/spacer:10;
 ambtemps=-33:98/spacer:65;
-currents=[0.002:0.001:0.019, 0.02:0.005:1.5];
+currents=0.002:0.005:1.502;
+%currents=[0.00001:0.00001:0.00499, 0.005:0.005:1.5];
+%currents=[0.002:0.001:0.019, 0.02:0.005:1.5];
 
 inputCombo = allcomb(currents,psols,winds,ambtemps);
 currents=inputCombo(:,1);
@@ -70,7 +72,7 @@ beta=(cdata.ResistanceACHighdegcMeter-...
 alpha=cdata.ResistanceACHighdegcMeter-beta*cdata.HighTemp;  
 polymodel=str2func(cdata.polymodels);
 GuessTcs=GetGuessTemp(currents.*maxcurrent,ambtemps,diam,phi,winds,...
-    alpha,beta,epsilons,alphas,psols,polymodel); 
+    alpha,beta,alphas,psols,polymodel); 
 output(:,1)=GuessTcs;
 I2Rs = zeros(weatherPermutationCount,1);
 Prads = zeros(weatherPermutationCount,1);
@@ -80,7 +82,7 @@ morganTemps=zeros(weatherPermutationCount,1);
 minRiseThresh=zeros(weatherPermutationCount,1);
 tic
 for counter=1:weatherPermutationCount
-    if(mod(counter,1000)==0)
+    if(mod(counter,10000)==0)
         toc
         disp(strcat(num2str(counter/weatherPermutationCount),'_',num2str(counter)))
     end

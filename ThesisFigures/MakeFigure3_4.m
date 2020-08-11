@@ -27,8 +27,8 @@ subplot(2,1,2);
 err=murphyTemps-morganTemps;
 scatter(morganTemps(minRiseThresh==1)-ambtemps(minRiseThresh==1),err(minRiseThresh==1),50,'.')
 hold on
-scatter(morganTemps(minRiseThresh==0 & abs(err)>1e-2)-ambtemps(minRiseThresh==0 & abs(err)>1e-2),err(minRiseThresh==0 & abs(err)>1e-2),50,'.')
-scatter(morganTemps(minRiseThresh==0 & abs(err)<1e-2)-ambtemps(minRiseThresh==0 & abs(err)<1e-2),err(minRiseThresh==0 & abs(err)<1e-2),50,'.')
+scatter(morganTemps(minRiseThresh==0 & abs(err)>2e-6)-ambtemps(minRiseThresh==0 & abs(err)>2e-6),err(minRiseThresh==0 & abs(err)>2e-6),50,'.')
+scatter(morganTemps(minRiseThresh==0 & abs(err)<=2e-6)-ambtemps(minRiseThresh==0 & abs(err)<=2e-6),err(minRiseThresh==0 & abs(err)<=2e-6),50,'.')
 ylim([-5 1])
 yticks([-5 -4 -3 -2 -1 0 1])
 xlabel('Conductor Temperature Rise')

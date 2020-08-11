@@ -31,8 +31,11 @@ load(strcat(foldersource,'conductorInfoStep3.mat'))
 
 convergeLimit=conductorInfo.minGuessRise;
 figure('Renderer', 'painters', 'Position', [10 10 700 400]);
-scatter(conductorInfo.Index,convergeLimit,50,'.') %'linewidth',1
-% ylim([0.4 2.2])
+set(gcf, 'Color', 'w');
+set(gca, 'FontName', 'Calibri')
+set(gca,'fontsize', 11)
+scatter(conductorInfo.Index,conductorInfo.minGuessRise,50,'.') %'linewidth',1
+ylim([0 0.9])
 hold on
 yL = get(gca,'YLim');
 line([68 68],yL,'LineStyle','--','Color','r');
@@ -47,8 +50,5 @@ ax = gca;
 ax.YGrid = 'on';
 ax.GridLineStyle = '-';
 xlabel('Conductor Index')
-ylabel('Minimum Starting Temperature Rise [°C]')
+ylabel({'Minimum Starting',' Temperature Rise [°C]'})
 
-set(gcf, 'Color', 'w');
-set(gca, 'FontName', 'Calibri')
-set(gca,'fontsize', 11)
