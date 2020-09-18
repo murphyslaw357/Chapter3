@@ -26,7 +26,7 @@ end
 % end
 % 
 % conductorDataTotal=sortrows(conductorDataTotal,'Index');
-load(strcat(foldersource,'conductorInfoStep3.mat'))
+load(strcat(foldersource,'conductorInfoStep2.mat'))
 [conductorCount,~] = size(conductorInfo);
 
 convergeLimit=conductorInfo.minGuessRise;
